@@ -9,7 +9,11 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertThrows
+import org.junit.Assert.assertTrue
+import okhttp3.mockwebserver.Dispatcher
+import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
+import okhttp3.mockwebserver.RecordedRequest
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -23,6 +27,9 @@ import org.mockito.Mockito.mock
 import org.mockito.Mockito.never
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.verifyNoInteractions
+import org.mockito.Mockito.times
+import org.mockito.Mockito.`when`
+import org.robolectric.util.ReflectionHelpers
 
 @RunWith(TestRunner::class)
 class IterableRequestTaskTest {
@@ -31,6 +38,7 @@ class IterableRequestTaskTest {
     @Before
     fun setUp() {
         requestDispatcher = mock(IterableRequestDispatcher::class.java)
+        `when`(requestDispatcher.elapsedRealtimeMillis()).thenReturn(1_000L)
     }
 
     @Test
@@ -71,6 +79,69 @@ class IterableRequestTaskTest {
     }
 
     @Test
+    fun `policy retries server errors with fixed spacing until max attempts`() {
+        for (retryCount in 0..3) {
+            val request = policyRequest()
+
+            IterableRequestTask(request, retryCount, requestDispatcher).handleResponse(serverError())
+
+            verify(requestDispatcher).retry(request, retryCount + 1, 2000)
+        }
+        val failure = mock(IterableHelper.FailureHandler::class.java)
+
+        IterableRequestTask(policyRequest(failure), 4, requestDispatcher).handleResponse(serverError())
+
+        verify(failure).onFailure(eq("Server unavailable"), any())
+    }
+
+    @Test
+    fun `policy stops retrying at the total deadline`() {
+        val request = policyRequest()
+        `when`(requestDispatcher.elapsedRealtimeMillis()).thenReturn(1_000L + 57_500L)
+        IterableRequestTask(request, 1, requestDispatcher).handleResponse(serverError())
+        verify(requestDispatcher).retry(request, 2, 2000)
+
+        val failure = mock(IterableHelper.FailureHandler::class.java)
+        `when`(requestDispatcher.elapsedRealtimeMillis()).thenReturn(1_000L + 57_501L)
+        IterableRequestTask(policyRequest(failure), 1, requestDispatcher).handleResponse(serverError())
+
+        verify(failure).onFailure(eq("Server unavailable"), any())
+        verify(requestDispatcher).retry(any(IterableApiRequest::class.java), anyInt(), anyLong())
+    }
+
+    @Test
+    fun `policy retries a network failure`() {
+        val request = policyRequest()
+
+        IterableRequestTask(request, 0, requestDispatcher).handleResponse(
+            IterableApiResponse.networkFailure(null, "timeout")
+        )
+
+        verify(requestDispatcher).retry(request, 1, 2000)
+    }
+
+    @Test
+    fun `policy treats client errors, other code 0 failures and failed 2xx as terminal`() {
+        val terminal = listOf(
+            IterableApiResponse.failure(429, null, null, "Too many requests"),
+            IterableApiResponse.failure(400, null, null, "Invalid Request"),
+            IterableApiResponse.failure(401, null, jwtError(), "JWT Authorization header error"),
+            IterableApiResponse.failure(0, null, null, "SSL handshake failed"),
+            IterableApiResponse.failure(200, "", null, "No data received"),
+            IterableApiResponse.failure(200, null, null, "Read timed out"),
+            IterableApiResponse.failure(204, "", null, "Received non-200 response: 204")
+        )
+        for (response in terminal) {
+            val failure = mock(IterableHelper.FailureHandler::class.java)
+
+            IterableRequestTask(policyRequest(failure), 0, requestDispatcher).handleResponse(response)
+
+            verify(failure).onFailure(eq(response.errorMessage), any())
+        }
+        verifyNoRetry()
+    }
+
+    @Test
     fun `legacy loop ignores the network failure marker`() {
         val failure = mock(IterableHelper.FailureHandler::class.java)
 
@@ -81,6 +152,174 @@ class IterableRequestTaskTest {
         verify(failure).onFailure("timeout", null)
         verifyNoRetry()
     }
+
+    @Test
+    fun `policy applies only when enabled locally and by remote autoRetry`() {
+        assertSame(enabledPolicy, activePolicyFor(enabledPolicy, autoRetry = true))
+        assertNull(activePolicyFor(enabledPolicy, autoRetry = false))
+        assertNull(activePolicyFor(IterableNetworkRetryPolicy.DEFAULT, autoRetry = true))
+    }
+
+    @Test
+    fun `auth retry keeps the network retry policy`() {
+        val request = policyRequest()
+
+        IterableRequestTask.retryRequestWithNewAuthToken("fresh-token", request, requestDispatcher)
+
+        assertSame(enabledPolicy, captureDispatchedRequest().networkRetryPolicy)
+    }
+
+    @Test
+    fun `auth retry keeps the attempt count and the deadline start`() {
+        val request = policyRequest().apply { networkRetryAttempts = 3 }
+
+        IterableRequestTask.retryRequestWithNewAuthToken("fresh-token", request, requestDispatcher)
+
+        val captor = ArgumentCaptor.forClass(IterableApiRequest::class.java)
+        verify(requestDispatcher).executeRetry(captor.capture(), eq(3))
+        assertEquals(1_000L, captor.value.networkRetryStartMillis)
+    }
+
+    @Test
+    fun `deadline starts at the first attempt and is not restarted by retries`() {
+        val clock = ManualClock().apply { now = 100_000L }
+        val retries = PendingRetries()
+        val failure = mock(IterableHelper.FailureHandler::class.java)
+        val server = MockWebServer().apply {
+            repeat(5) { enqueue(MockResponse().setResponseCode(500).setBody("{}")) }
+            start()
+        }
+        IterableRequestTask.overrideUrl = server.url("/").toString()
+
+        try {
+            dispatcher(clock, retries).execute(policyRequest(failure).apply { networkRetryStartMillis = 0L })
+            assertEquals(1, retries.tasks.size)
+
+            clock.now = 100_000L + 58_500L
+            retries.runNext()
+
+            assertEquals(2, server.requestCount)
+            assertTrue(retries.tasks.isEmpty())
+            verify(failure).onFailure(eq("Internal Server Error"), any())
+        } finally {
+            server.shutdown()
+        }
+    }
+
+    @Test
+    fun `retry that starts after the total deadline is not sent and delivers the failure`() {
+        val clock = ManualClock()
+        val retries = PendingRetries()
+        val failure = mock(IterableHelper.FailureHandler::class.java)
+        val server = MockWebServer().apply {
+            dispatcher = object : Dispatcher() {
+                override fun dispatch(request: RecordedRequest): MockResponse {
+                    clock.now += 57_000L
+                    return MockResponse().setResponseCode(500).setBody("{}")
+                }
+            }
+            start()
+        }
+        IterableRequestTask.overrideUrl = server.url("/").toString()
+
+        try {
+            dispatcher(clock, retries).execute(policyRequest(failure))
+            assertEquals(1, retries.tasks.size)
+            verifyNoInteractions(failure)
+
+            clock.now = 600_000L
+            retries.runNext()
+
+            assertEquals(1, server.requestCount)
+            assertTrue(retries.tasks.isEmpty())
+            verify(failure, times(1)).onFailure(eq("Internal Server Error"), any())
+        } finally {
+            server.shutdown()
+        }
+    }
+
+    @Test
+    fun `retry approved at the last moment is sent when it starts within the tolerance`() {
+        val clock = ManualClock()
+        val retries = PendingRetries()
+        val success = mock(IterableHelper.SuccessHandler::class.java)
+        val failure = mock(IterableHelper.FailureHandler::class.java)
+        val lastApproval = 60_000L - 2_000L - IterableNetworkRetryClassifier.RETRY_START_TOLERANCE_MILLIS
+        val server = MockWebServer().apply {
+            dispatcher = object : Dispatcher() {
+                override fun dispatch(request: RecordedRequest): MockResponse {
+                    if (requestCount == 1) {
+                        clock.now = lastApproval
+                        return MockResponse().setResponseCode(500).setBody("{}")
+                    }
+                    return MockResponse().setResponseCode(200).setBody("{}")
+                }
+            }
+            start()
+        }
+        IterableRequestTask.overrideUrl = server.url("/").toString()
+
+        try {
+            dispatcher(clock, retries).execute(policyRequest(failure).apply { successCallback = success })
+            assertEquals(1, retries.tasks.size)
+
+            clock.now = 60_000L
+            retries.runNext()
+
+            assertEquals(2, server.requestCount)
+            verify(success).onSuccess(any())
+            verifyNoInteractions(failure)
+        } finally {
+            server.shutdown()
+        }
+    }
+
+    @Test
+    fun `JWT re-send continues the attempt count of the same call`() {
+        val previousApi = IterableApi.sharedInstance
+        IterableApi.sharedInstance = IterableTestUtils.newApiWithInlineRequests()
+        ReflectionHelpers.setField(IterableApi.sharedInstance, "authManager",
+            ImmediateRefreshAuthManager(IterableApi.sharedInstance))
+        val retries = PendingRetries()
+        val server = MockWebServer().apply {
+            enqueue(MockResponse().setResponseCode(500).setBody("{}"))
+            enqueue(MockResponse().setResponseCode(500).setBody("{}"))
+            enqueue(MockResponse().setResponseCode(401).setBody(jwtError().toString()))
+            repeat(5) { enqueue(MockResponse().setResponseCode(500).setBody("{}")) }
+            start()
+        }
+        IterableRequestTask.overrideUrl = server.url("/").toString()
+        val threeAttempts = IterableNetworkRetryPolicy.Builder().setRetryEnabled(true).setMaxAttempts(3).build()
+
+        try {
+            dispatcher(ManualClock(), retries).execute(request().apply { networkRetryPolicy = threeAttempts })
+            var guard = 0
+            while (retries.tasks.isNotEmpty() && guard++ < 10) {
+                retries.runNext()
+            }
+
+            assertEquals(4, server.requestCount)
+        } finally {
+            server.shutdown()
+            IterableApi.sharedInstance = previousApi
+        }
+    }
+
+    private class ManualClock : IterableRequestDispatcher.Clock {
+        @Volatile var now = 0L
+        override fun elapsedRealtimeMillis() = now
+    }
+
+    private class PendingRetries : IterableRequestDispatcher.RetryScheduler {
+        val tasks = mutableListOf<Runnable>()
+        override fun schedule(runnable: Runnable, delayMs: Long) {
+            tasks += runnable
+        }
+        fun runNext() = tasks.removeAt(0).run()
+    }
+
+    private fun dispatcher(clock: IterableRequestDispatcher.Clock, retries: PendingRetries) =
+        IterableRequestDispatcher(Runnable::run, Runnable::run, Runnable::run, retries, clock)
 
     @Test
     fun `connection IO failures are marked only when they are network failures`() {
@@ -210,9 +449,34 @@ class IterableRequestTaskTest {
         assertFalse(captureDispatchedRequest().canRetry())
     }
 
+    private val enabledPolicy = IterableNetworkRetryPolicy.Builder().setRetryEnabled(true).build()
+
+    private fun policyRequest(onFailure: IterableHelper.FailureHandler? = null): IterableApiRequest {
+        return request(onFailure = onFailure).apply {
+            networkRetryPolicy = enabledPolicy
+            networkRetryStartMillis = 1_000L
+        }
+    }
+
+    private fun activePolicyFor(
+        localPolicy: IterableNetworkRetryPolicy,
+        autoRetry: Boolean
+    ): IterableNetworkRetryPolicy? {
+        val remote = IterableRemoteRetryConfig().apply { isAutoRetryEnabled = autoRetry }
+        OnlineRequestProcessor(requestDispatcher, { localPolicy }, remote)
+            .processPostRequest("api-key", "api/test", JSONObject(), null, null, null)
+        val captor = ArgumentCaptor.forClass(IterableApiRequest::class.java)
+        verify(requestDispatcher, org.mockito.Mockito.atLeastOnce()).execute(captor.capture())
+        return captor.value.networkRetryPolicy
+    }
+
     private fun execute(baseUrl: String): IterableApiResponse {
         IterableRequestTask.overrideUrl = baseUrl
         return IterableRequestTask.executeApiRequest(request(), requestDispatcher)
+    }
+
+    private fun jwtError(): JSONObject {
+        return JSONObject().put("code", IterableNetworkRetryClassifier.ERROR_CODE_INVALID_JWT_PAYLOAD)
     }
 
     private fun verifyNoRetry() {

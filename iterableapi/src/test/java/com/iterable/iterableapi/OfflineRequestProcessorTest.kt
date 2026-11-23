@@ -136,6 +136,53 @@ class OfflineRequestProcessorTest : BaseTest() {
     }
 
     @Test
+    fun `immediate requests get the network retry policy when remote autoRetry is on`() {
+        remoteRetryConfig.isAutoRetryEnabled = true
+
+        requestProcessor.processGetRequest("api-key", IterableConstants.ENDPOINT_GET_INAPP_MESSAGES, JSONObject(), null, null, null)
+
+        assertSame(enabledPolicy, captureDispatchedRequest().networkRetryPolicy)
+    }
+
+    @Test
+    fun `immediate GET with a legacy callback gets the network retry policy when remote autoRetry is on`() {
+        remoteRetryConfig.isAutoRetryEnabled = true
+
+        requestProcessor.processGetRequest("api-key", IterableConstants.ENDPOINT_GET_INAPP_MESSAGES, JSONObject(), null,
+            null as IterableHelper.IterableActionHandler?)
+
+        assertSame(enabledPolicy, captureDispatchedRequest().networkRetryPolicy)
+    }
+
+    @Test
+    fun `immediate POST gets the network retry policy when remote autoRetry is on`() {
+        remoteRetryConfig.isAutoRetryEnabled = true
+
+        requestProcessor.processPostRequest("api-key", IterableConstants.ENDPOINT_UPDATE_EMAIL, JSONObject(), null, null, null)
+
+        assertSame(enabledPolicy, captureDispatchedRequest().networkRetryPolicy)
+    }
+
+    @Test
+    fun `immediate POST keeps the legacy retry loop when remote autoRetry is off`() {
+        requestProcessor.processPostRequest("api-key", IterableConstants.ENDPOINT_UPDATE_EMAIL, JSONObject(), null, null, null)
+
+        assertNull(captureDispatchedRequest().networkRetryPolicy)
+    }
+
+    @Test
+    fun `stored requests do not get the network retry policy`() {
+        remoteRetryConfig.isAutoRetryEnabled = true
+        `when`(healthMonitor.canSchedule()).thenReturn(true)
+
+        requestProcessor.processPostRequest("api-key", IterableConstants.ENDPOINT_TRACK, JSONObject(), null, null, null)
+
+        val requestCaptor = ArgumentCaptor.forClass(IterableApiRequest::class.java)
+        verify(taskScheduler).scheduleTask(requestCaptor.capture(), isNull(), isNull())
+        assertNull(requestCaptor.value.networkRetryPolicy)
+    }
+
+    @Test
     fun `request sent after a failed task insert is not re-sent inline on a JWT 401 when autoRetry is on`() {
         remoteRetryConfig.isAutoRetryEnabled = true
         val server = sendAfterFailedInsertAndGetJwt401()

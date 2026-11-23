@@ -33,7 +33,21 @@ class IterableNetworkRetryClassifier {
         this.policy = policy;
     }
 
-    // Expects the code as IterableRequestTask reports it: 0 for connection errors and timeouts.
+    // A failed 2xx is terminal because the server already has the request.
+    @NonNull
+    static Outcome classify(@NonNull IterableApiResponse response) {
+        if (response.success) {
+            return Outcome.SUCCESS;
+        }
+        int code = response.responseCode;
+        if ((code >= 200 && code < 300) || (code == 0 && !response.networkFailure)) {
+            return Outcome.TERMINAL;
+        }
+        return classify(code, response.responseJson);
+    }
+
+    // Expects the code as IterableRequestTask reports it: 0 for any client-side failure to get a response,
+    // including connection errors and timeouts.
     @NonNull
     static Outcome classify(int responseCode, @Nullable JSONObject json) {
         if (responseCode >= 200 && responseCode < 300) {
@@ -73,6 +87,9 @@ class IterableNetworkRetryClassifier {
         return false;
     }
 
+    // A retry starts a little after its delay, so approval leaves this margin for the retry-start deadline check.
+    static final long RETRY_START_TOLERANCE_MILLIS = 500L;
+
     /**
      * @param failedAttempt 1-based number of the attempt that just failed; values below 1 never retry
      */
@@ -93,7 +110,12 @@ class IterableNetworkRetryClassifier {
         if (elapsed < 0) {
             return false;
         }
-        return elapsed <= deadline && delayMillis() <= deadline - elapsed;
+        return delayMillis() <= deadline - elapsed - RETRY_START_TOLERANCE_MILLIS;
+    }
+
+    boolean isPastDeadline(long firstAttemptStartMillis, long nowMillis) {
+        long deadline = policy.getTotalDeadlineMillis();
+        return deadline != 0 && nowMillis - firstAttemptStartMillis > deadline;
     }
 
     long delayMillis() {

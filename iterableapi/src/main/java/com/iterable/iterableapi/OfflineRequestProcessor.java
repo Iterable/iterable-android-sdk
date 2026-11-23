@@ -106,16 +106,22 @@ class OfflineRequestProcessor implements RequestProcessor {
         this.remoteRetryConfig = remoteRetryConfig;
     }
 
+    private void executeImmediately(@NonNull IterableApiRequest request) {
+        request.setNetworkRetryPolicy(remoteRetryConfig.activeNetworkRetryPolicy(
+                networkRetryPolicyProvider.getNetworkRetryPolicy()));
+        immediateRequestDispatcher.execute(request);
+    }
+
     @Override
     public void processGetRequest(@Nullable String apiKey, @NonNull String resourcePath, @NonNull JSONObject json, String authToken, @Nullable IterableHelper.IterableActionHandler onCallback) {
         IterableApiRequest request = new IterableApiRequest(apiKey, resourcePath, json, IterableApiRequest.GET, authToken, onCallback);
-        immediateRequestDispatcher.execute(request);
+        executeImmediately(request);
     }
 
     @Override
     public void processGetRequest(@Nullable String apiKey, @NonNull String resourcePath, @NonNull JSONObject json, String authToken,  @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
         IterableApiRequest request = new IterableApiRequest(apiKey, resourcePath, json, IterableApiRequest.GET, authToken, onSuccess, onFailure);
-        immediateRequestDispatcher.execute(request);
+        executeImmediately(request);
     }
 
     @Override
@@ -127,7 +133,7 @@ class OfflineRequestProcessor implements RequestProcessor {
             request.setRemoteRetryConfig(remoteRetryConfig);
             taskScheduler.scheduleTask(request, onSuccess, onFailure);
         } else {
-            immediateRequestDispatcher.execute(request);
+            executeImmediately(request);
         }
     }
 

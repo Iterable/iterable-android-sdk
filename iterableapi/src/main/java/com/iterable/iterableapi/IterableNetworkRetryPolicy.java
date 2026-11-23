@@ -4,8 +4,12 @@ import androidx.annotation.NonNull;
 
 /**
  * Retry policy for API requests that fail with a server error (5xx), a connection error or a timeout.
- * The policy only takes effect once enabled; when it is not enabled (the default), the SDK's existing
- * request retry behaviour is unchanged. The policy is not applied to requests yet.
+ * The policy applies to online requests once it is enabled and the project's remote {@code autoRetry}
+ * setting is on; otherwise (the default) the SDK's existing request retry behaviour is unchanged.
+ * Requests stored by offline mode keep their existing retry behaviour.
+ * A request re-sent after a JWT authorization failure is handled by the auth retry path, so the re-send is not
+ * limited by {@link #getMaxAttempts()} or {@link #getTotalDeadline()}. Network retries after it continue
+ * the same attempt count and deadline.
  */
 public final class IterableNetworkRetryPolicy {
     private static final String TAG = "IterableNetworkRetryPolicy";

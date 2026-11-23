@@ -69,6 +69,9 @@ class IterableRequestTask implements Runnable {
         if (retry && !iterableApiRequest.canRetry()) {
             return;
         }
+        if (iterableApiRequest.getNetworkRetryPolicy() != null && !startNetworkRetryAttempt()) {
+            return;
+        }
 
         IterableApiResponse response = executeApiRequest(iterableApiRequest, requestDispatcher);
         requestDispatcher.deliverResult(() -> {
@@ -76,6 +79,27 @@ class IterableRequestTask implements Runnable {
                 handleResponse(response);
             }
         });
+    }
+
+    // The retry was approved before its delay and executor wait, so the deadline is checked again here.
+    private boolean startNetworkRetryAttempt() {
+        long now = requestDispatcher.elapsedRealtimeMillis();
+        if (retryCount == 0) {
+            iterableApiRequest.setNetworkRetryStartMillis(now);
+        } else {
+            IterableApiResponse retriedFailure = iterableApiRequest.takeNetworkRetriedFailure();
+            if (retriedFailure != null && new IterableNetworkRetryClassifier(iterableApiRequest.getNetworkRetryPolicy())
+                    .isPastDeadline(iterableApiRequest.getNetworkRetryStartMillis(), now)) {
+                requestDispatcher.deliverResult(() -> {
+                    if (!retry || iterableApiRequest.canRetry()) {
+                        finish(retriedFailure);
+                    }
+                });
+                return false;
+            }
+        }
+        iterableApiRequest.setNetworkRetryAttempts(retryCount + 1);
+        return true;
     }
 
     static void retryRequestWithNewAuthToken(
@@ -96,7 +120,8 @@ class IterableRequestTask implements Runnable {
             request.failureCallback = iterableApiRequest.failureCallback;
         }
         request.copyRetryStateFrom(iterableApiRequest);
-        requestDispatcher.executeRetry(request, 0);
+        int retryCount = request.getNetworkRetryPolicy() != null ? request.getNetworkRetryAttempts() : 0;
+        requestDispatcher.executeRetry(request, retryCount);
     }
 
     /**
@@ -390,9 +415,14 @@ class IterableRequestTask implements Runnable {
 
     void handleResponse(IterableApiResponse response) {
         if (shouldRetry(response)) {
-            retryRequestWithDelay();
+            retryRequestWithDelay(response);
             return;
-        } else if (response.success) {
+        }
+        finish(response);
+    }
+
+    private void finish(IterableApiResponse response) {
+        if (response.success) {
             handleSuccessResponse(response);
         } else {
             handleErrorResponse(response);
@@ -404,11 +434,27 @@ class IterableRequestTask implements Runnable {
     }
 
     private boolean shouldRetry(IterableApiResponse response) {
+        IterableNetworkRetryPolicy policy = iterableApiRequest.getNetworkRetryPolicy();
+        if (policy != null) {
+            return new IterableNetworkRetryClassifier(policy).shouldRetry(
+                    IterableNetworkRetryClassifier.classify(response),
+                    retryCount + 1,
+                    iterableApiRequest.getNetworkRetryStartMillis(),
+                    requestDispatcher.elapsedRealtimeMillis()
+            );
+        }
         return !response.success && response.responseCode >= 500 && retryCount <= MAX_RETRY_COUNT;
     }
 
-    private void retryRequestWithDelay() {
-        long delay = (retryCount > 2) ? RETRY_DELAY_MS * retryCount : 0;
+    private void retryRequestWithDelay(IterableApiResponse response) {
+        IterableNetworkRetryPolicy policy = iterableApiRequest.getNetworkRetryPolicy();
+        long delay;
+        if (policy != null) {
+            iterableApiRequest.setNetworkRetriedFailure(response);
+            delay = new IterableNetworkRetryClassifier(policy).delayMillis();
+        } else {
+            delay = (retryCount > 2) ? RETRY_DELAY_MS * retryCount : 0;
+        }
         requestDispatcher.retry(iterableApiRequest, retryCount + 1, delay);
     }
 
@@ -477,6 +523,10 @@ class IterableApiRequest {
     final String requestType;
     final String authToken;
     private @Nullable IterableRequestRetryState retryState;
+    private @Nullable IterableNetworkRetryPolicy networkRetryPolicy;
+    private long networkRetryStartMillis;
+    private int networkRetryAttempts;
+    private @Nullable IterableApiResponse networkRetriedFailure;
     private @Nullable IterableRemoteRetryConfig remoteRetryConfig;
 
     private ProcessorType processorType = ProcessorType.ONLINE;
@@ -515,6 +565,46 @@ class IterableApiRequest {
 
     void copyRetryStateFrom(@NonNull IterableApiRequest request) {
         setRetryState(request.retryState);
+        setNetworkRetryPolicy(request.networkRetryPolicy);
+        setNetworkRetryStartMillis(request.networkRetryStartMillis);
+        setNetworkRetryAttempts(request.networkRetryAttempts);
+    }
+
+    // Null when the policy is off locally or remotely, which keeps the legacy retry loop.
+    @Nullable
+    IterableNetworkRetryPolicy getNetworkRetryPolicy() {
+        return networkRetryPolicy;
+    }
+
+    void setNetworkRetryPolicy(@Nullable IterableNetworkRetryPolicy networkRetryPolicy) {
+        this.networkRetryPolicy = networkRetryPolicy;
+    }
+
+    long getNetworkRetryStartMillis() {
+        return networkRetryStartMillis;
+    }
+
+    void setNetworkRetryStartMillis(long networkRetryStartMillis) {
+        this.networkRetryStartMillis = networkRetryStartMillis;
+    }
+
+    int getNetworkRetryAttempts() {
+        return networkRetryAttempts;
+    }
+
+    void setNetworkRetryAttempts(int networkRetryAttempts) {
+        this.networkRetryAttempts = networkRetryAttempts;
+    }
+
+    void setNetworkRetriedFailure(@Nullable IterableApiResponse networkRetriedFailure) {
+        this.networkRetriedFailure = networkRetriedFailure;
+    }
+
+    @Nullable
+    IterableApiResponse takeNetworkRetriedFailure() {
+        IterableApiResponse failure = networkRetriedFailure;
+        networkRetriedFailure = null;
+        return failure;
     }
 
     void setRemoteRetryConfig(@Nullable IterableRemoteRetryConfig remoteRetryConfig) {

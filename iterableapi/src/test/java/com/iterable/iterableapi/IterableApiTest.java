@@ -3,6 +3,7 @@ package com.iterable.iterableapi;
 import com.iterable.iterableapi.util.DeviceInfoUtils;
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
 
@@ -55,6 +56,7 @@ import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 import static org.robolectric.Shadows.shadowOf;
 
 public class IterableApiTest extends BaseTest {
@@ -1060,6 +1062,53 @@ public class IterableApiTest extends BaseTest {
                         + "\", \"msg\": \"JWT token is expired\"}");
     }
 
+    @Test
+    public void testPendingPushOpenOnLateInitUsesSavedAutoRetry() throws Exception {
+        IterableApi.initialize(getContext(), "apiKey");
+        IterableApi.getInstance().setEmail("test@email.com");
+        getContext().getSharedPreferences(IterableConstants.SHARED_PREFS_SAVED_CONFIGURATION, Context.MODE_PRIVATE)
+                .edit()
+                .putBoolean(IterableConstants.SHARED_PREFS_AUTO_RETRY_KEY, true)
+                .commit();
+        IterableRequestDispatcher dispatcher = mock(IterableRequestDispatcher.class);
+        IterableApi.sharedInstance = new IterableApi(mock(IterableInAppManager.class),
+                mock(IterableEmbeddedManager.class), new IterablePushRegistration(pushRegistrationExecutor));
+        IterableApi.sharedInstance.setRequestDispatcher(dispatcher);
+        IterableActionRunner.IterableActionRunnerImpl originalActionRunner = IterableActionRunner.instance;
+        IterableActionRunner.instance = mock(IterableActionRunner.IterableActionRunnerImpl.class);
+        when(IterableActionRunner.instance.dispatchAction(any(), any(), any()))
+                .thenReturn(IterableActionRunner.ActionDispatchResult.NOT_HANDLED);
+
+        try {
+            Intent intent = new Intent(IterableConstants.ACTION_PUSH_ACTION);
+            intent.putExtra(IterableConstants.ITERABLE_DATA_KEY, IterableTestUtils.getResourceString("push_payload_custom_action.json"));
+            intent.putExtra(IterableConstants.ITERABLE_DATA_ACTION_IDENTIFIER, IterableConstants.ITERABLE_ACTION_DEFAULT);
+            new IterablePushActionReceiver().onReceive(getContext(), intent);
+            assertTrue(IterablePushNotificationUtil.hasPendingAction());
+            clearInvocations(dispatcher);
+
+            IterableNetworkRetryPolicy policy = new IterableNetworkRetryPolicy.Builder().setRetryEnabled(true).build();
+            IterableApi.initialize(getContext(), "apiKey", new IterableConfig.Builder()
+                    .setAutoPushRegistration(false)
+                    .setNetworkRetryPolicy(policy)
+                    .build());
+
+            ArgumentCaptor<IterableApiRequest> captor = ArgumentCaptor.forClass(IterableApiRequest.class);
+            verify(dispatcher, atLeastOnce()).execute(captor.capture());
+            IterableApiRequest firstPushOpen = null;
+            for (IterableApiRequest request : captor.getAllValues()) {
+                if (IterableConstants.ENDPOINT_TRACK_PUSH_OPEN.equals(request.resourcePath)) {
+                    firstPushOpen = request;
+                    break;
+                }
+            }
+            assertNotNull(firstPushOpen);
+            assertSame(policy, firstPushOpen.getNetworkRetryPolicy());
+        } finally {
+            IterableActionRunner.instance = originalActionRunner;
+        }
+    }
+
     // Request tests replace the client via setRequestDispatcher, so this checks the constructor's wiring too.
     @Test
     public void testApiClientSharesRemoteRetryConfigWithApi() {
@@ -1068,6 +1117,36 @@ public class IterableApiTest extends BaseTest {
 
         api.setRequestDispatcher(mock(IterableRequestDispatcher.class));
         assertSame(api.remoteRetryConfig, api.apiClient.getRemoteRetryConfig());
+    }
+
+    @Test
+    public void testApiClientReadsNetworkRetryPolicyFromConfig() {
+        IterableApi api = new IterableApi();
+        IterableNetworkRetryPolicy policy = new IterableNetworkRetryPolicy.Builder().setRetryEnabled(true).build();
+        api.config = new IterableConfig.Builder().setNetworkRetryPolicy(policy).build();
+
+        assertSame(policy, api.apiClient.getNetworkRetryPolicy());
+    }
+
+    @Test
+    public void testOnlineRequestsGetNetworkRetryPolicyWhenRemoteAutoRetryIsOn() {
+        IterableRequestDispatcher dispatcher = mock(IterableRequestDispatcher.class);
+        IterableApi.sharedInstance.setRequestDispatcher(dispatcher);
+        IterableNetworkRetryPolicy policy = new IterableNetworkRetryPolicy.Builder().setRetryEnabled(true).build();
+        IterableApi.initialize(getContext(), "apiKey", new IterableConfig.Builder()
+                .setAutoPushRegistration(false)
+                .setNetworkRetryPolicy(policy)
+                .build());
+        IterableApi.getInstance().setEmail("test@email.com");
+        IterableApi.getInstance().remoteRetryConfig.setAutoRetryEnabled(true);
+        clearInvocations(dispatcher);
+
+        IterableApi.getInstance().track("retriedEvent");
+
+        ArgumentCaptor<IterableApiRequest> captor = ArgumentCaptor.forClass(IterableApiRequest.class);
+        verify(dispatcher).execute(captor.capture());
+        assertEquals(IterableConstants.ENDPOINT_TRACK, captor.getValue().resourcePath);
+        assertSame(policy, captor.getValue().getNetworkRetryPolicy());
     }
 
     // A fresh holder anywhere here silently turns remote autoRetry off for stored requests.

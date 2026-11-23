@@ -203,8 +203,6 @@ public class IterableApi {
         SharedPreferences sharedPref = context.getSharedPreferences(IterableConstants.SHARED_PREFS_SAVED_CONFIGURATION, Context.MODE_PRIVATE);
         boolean offlineMode = sharedPref.getBoolean(IterableConstants.SHARED_PREFS_OFFLINE_MODE_KEY, false);
         sharedInstance.apiClient.setOfflineProcessingEnabled(offlineMode);
-
-        sharedInstance.remoteRetryConfig.setAutoRetryEnabled(sharedPref.getBoolean(IterableConstants.SHARED_PREFS_AUTO_RETRY_KEY, false));
     }
 
     /**
@@ -814,6 +812,8 @@ public class IterableApi {
         }
 
         sharedInstance.retrieveEmailAndUserId();
+        // Requests from the pending push action below read the saved autoRetry when they are built.
+        sharedInstance.remoteRetryConfig.loadSaved(context);
 
         // Process a pending push action before registering lifecycle callbacks so attribution
         // is set before the first onForeground(), which otherwise registers for push twice.

@@ -147,7 +147,8 @@ class IterableNetworkRetryClassifierTest {
         val deadline = 10_000L
         for (delay in listOf(2_000L, 500L)) {
             val classifier = classifierWith(delay / 1000.0, deadline / 1000.0)
-            val lastRetry = deadline - delay
+            // A retry is approved only if it would start at least 500 ms before the deadline.
+            val lastRetry = deadline - delay - 500L
             assertEquals(delay, classifier.delayMillis())
             assertTrue("delay $delay", classifier.shouldRetry(Outcome.RETRIABLE, 1, start, start + lastRetry))
             assertFalse("delay $delay", classifier.shouldRetry(Outcome.RETRIABLE, 1, start, start + lastRetry + 1))
@@ -170,5 +171,35 @@ class IterableNetworkRetryClassifierTest {
     fun zeroDeadlineIsUnbounded() {
         val classifier = IterableNetworkRetryClassifier(enabledPolicy(deadlineSeconds = 0.0))
         assertTrue(classifier.shouldRetry(Outcome.RETRIABLE, 1, start, start + 3_600_000L))
+    }
+
+    @Test
+    fun zeroDeadlineNeverStopsARetryFromStarting() {
+        val classifier = IterableNetworkRetryClassifier(enabledPolicy(deadlineSeconds = 0.0))
+        assertFalse(classifier.isPastDeadline(start, start + 2_000L))
+        assertFalse(classifier.isPastDeadline(start, start + 3_600_000L))
+    }
+
+    @Test
+    fun retryStartIsPastTheDeadlineOnlyAfterIt() {
+        val classifier = IterableNetworkRetryClassifier(enabledPolicy(deadlineSeconds = 10.0))
+        assertFalse(classifier.isPastDeadline(start, start + 10_000L))
+        assertTrue(classifier.isPastDeadline(start, start + 10_001L))
+    }
+
+    @Test
+    fun anApprovedRetryThatStartsSlightlyLateIsStillWithinTheDeadline() {
+        val deadline = 10_000L
+        val classifier = IterableNetworkRetryClassifier(enabledPolicy(deadlineSeconds = deadline / 1000.0))
+        val lateStart = 100L
+        var approved = 0
+        for (elapsed in 0L..deadline) {
+            if (classifier.shouldRetry(Outcome.RETRIABLE, 1, start, start + elapsed)) {
+                approved++
+                assertFalse("approved at $elapsed",
+                    classifier.isPastDeadline(start, start + elapsed + classifier.delayMillis() + lateStart))
+            }
+        }
+        assertTrue(approved > 0)
     }
 }
