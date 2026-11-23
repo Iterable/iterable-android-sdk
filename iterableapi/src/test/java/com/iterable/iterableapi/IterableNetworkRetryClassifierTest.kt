@@ -38,13 +38,13 @@ class IterableNetworkRetryClassifierTest {
     @Test
     fun jwtBodiesReachTheAuthPathOnlyOn401() {
         for (code in listOf(
-            IterableRequestTask.ERROR_CODE_INVALID_JWT_PAYLOAD,
-            IterableRequestTask.ERROR_CODE_MISSING_JWT_PAYLOAD,
-            IterableRequestTask.ERROR_CODE_JWT_USER_IDENTIFIERS_MISMATCHED
+            IterableNetworkRetryClassifier.ERROR_CODE_INVALID_JWT_PAYLOAD,
+            IterableNetworkRetryClassifier.ERROR_CODE_MISSING_JWT_PAYLOAD,
+            IterableNetworkRetryClassifier.ERROR_CODE_JWT_USER_IDENTIFIERS_MISMATCHED
         )) {
             assertEquals(code, Outcome.AUTH, IterableNetworkRetryClassifier.classify(401, jwtError(code)))
         }
-        val jwtBody = jwtError(IterableRequestTask.ERROR_CODE_INVALID_JWT_PAYLOAD)
+        val jwtBody = jwtError(IterableNetworkRetryClassifier.ERROR_CODE_INVALID_JWT_PAYLOAD)
         for ((code, body) in listOf(403 to jwtBody, 400 to jwtBody, 401 to null, 401 to jwtError("BadApiKey"))) {
             assertEquals("$code $body", Outcome.TERMINAL, IterableNetworkRetryClassifier.classify(code, body))
         }

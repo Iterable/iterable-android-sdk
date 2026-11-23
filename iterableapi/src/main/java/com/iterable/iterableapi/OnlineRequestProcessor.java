@@ -14,9 +14,17 @@ class OnlineRequestProcessor implements RequestProcessor {
 
     private static final String TAG = "OnlineRequestProcessor";
     private final IterableRequestDispatcher requestDispatcher;
+    private final IterableApiClient.NetworkRetryPolicyProvider networkRetryPolicyProvider;
+    private final IterableRemoteRetryConfig remoteRetryConfig;
 
-    OnlineRequestProcessor(IterableRequestDispatcher requestDispatcher) {
+    OnlineRequestProcessor(
+            IterableRequestDispatcher requestDispatcher,
+            IterableApiClient.NetworkRetryPolicyProvider networkRetryPolicyProvider,
+            IterableRemoteRetryConfig remoteRetryConfig
+    ) {
         this.requestDispatcher = requestDispatcher;
+        this.networkRetryPolicyProvider = networkRetryPolicyProvider;
+        this.remoteRetryConfig = remoteRetryConfig;
     }
 
     @Override

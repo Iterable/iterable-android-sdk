@@ -3,9 +3,13 @@ package com.iterable.iterableapi;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 class IterableNetworkRetryClassifier {
+    static final String ERROR_CODE_INVALID_JWT_PAYLOAD = "InvalidJwtPayload";
+    static final String ERROR_CODE_MISSING_JWT_PAYLOAD = "BadAuthorizationHeader";
+    static final String ERROR_CODE_JWT_USER_IDENTIFIERS_MISMATCHED = "JwtUserIdentifiersMismatched";
 
     enum Outcome {
         SUCCESS,
@@ -30,7 +34,7 @@ class IterableNetworkRetryClassifier {
         if (responseCode == 0 || (responseCode >= 500 && responseCode < 600)) {
             return Outcome.RETRIABLE;
         }
-        if (responseCode == 401 && IterableRequestTask.matchesJWTErrorCodes(json)) {
+        if (responseCode == 401 && matchesJWTErrorCodes(json)) {
             return Outcome.AUTH;
         }
         return Outcome.TERMINAL;
@@ -61,5 +65,19 @@ class IterableNetworkRetryClassifier {
 
     long delayMillis() {
         return policy.getBackoffPolicy().delayMillis();
+    }
+
+    static boolean matchesJWTErrorCodes(@Nullable JSONObject json) {
+        return matchesErrorCode(json, ERROR_CODE_INVALID_JWT_PAYLOAD)
+                || matchesErrorCode(json, ERROR_CODE_MISSING_JWT_PAYLOAD)
+                || matchesErrorCode(json, ERROR_CODE_JWT_USER_IDENTIFIERS_MISMATCHED);
+    }
+
+    private static boolean matchesErrorCode(@Nullable JSONObject json, String errorCode) {
+        try {
+            return json != null && json.has("code") && json.getString("code").equals(errorCode);
+        } catch (JSONException e) {
+            return false;
+        }
     }
 }

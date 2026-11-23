@@ -39,9 +39,6 @@ class IterableRequestTask implements Runnable {
     static final long RETRY_DELAY_MS = 2000;      //2 seconds
     static final int MAX_RETRY_COUNT = 5;
 
-    static final String ERROR_CODE_INVALID_JWT_PAYLOAD = "InvalidJwtPayload";
-    static final String ERROR_CODE_MISSING_JWT_PAYLOAD = "BadAuthorizationHeader";
-    static final String ERROR_CODE_JWT_USER_IDENTIFIERS_MISMATCHED = "JwtUserIdentifiersMismatched";
     private final int retryCount;
     private final IterableApiRequest iterableApiRequest;
     private final IterableRequestDispatcher requestDispatcher;
@@ -229,13 +226,13 @@ class IterableRequestTask implements Runnable {
                 // If getResponseCode() returned -1 (e.g. due to network inspector
                 // interference) but the response body contains JWT error codes,
                 // we can infer the actual response was a 401.
-                if (responseCode == -1 && matchesJWTErrorCodes(jsonResponse)) {
+                if (responseCode == -1 && IterableNetworkRetryClassifier.matchesJWTErrorCodes(jsonResponse)) {
                     responseCode = 401;
                 }
 
                 // Handle HTTP status codes
                 if (responseCode == 401) {
-                    if (matchesJWTErrorCodes(jsonResponse)) {
+                    if (IterableNetworkRetryClassifier.matchesJWTErrorCodes(jsonResponse)) {
                         apiResponse = IterableApiResponse.failure(responseCode, requestResult, jsonResponse, "JWT Authorization header error");
                         IterableApi.getInstance().getAuthManager().handleAuthFailure(iterableApiRequest.authToken, getMappedErrorCodeForMessage(jsonResponse));
 
@@ -303,7 +300,7 @@ class IterableRequestTask implements Runnable {
             IterableApiRequest iterableApiRequest,
             IterableRequestDispatcher requestDispatcher
     ) {
-        boolean autoRetry = IterableApi.getInstance().isAutoRetryOnJwtFailure();
+        boolean autoRetry = iterableApiRequest.isAutoRetryOnJwtFailure();
         if (autoRetry && iterableApiRequest.getProcessorType() == IterableApiRequest.ProcessorType.OFFLINE) {
             IterableAuthManager authManager = IterableApi.getInstance().getAuthManager();
             authManager.setIsLastAuthTokenValid(false);
@@ -328,14 +325,6 @@ class IterableRequestTask implements Runnable {
         }
 
         return baseUrl;
-    }
-
-    private static boolean matchesErrorCode(JSONObject jsonResponse, String errorCode) {
-        try {
-            return jsonResponse != null && jsonResponse.has("code") && jsonResponse.getString("code").equals(errorCode);
-        } catch (JSONException e) {
-            return false;
-        }
     }
 
     private static AuthFailureReason getMappedErrorCodeForMessage(JSONObject jsonResponse) {
@@ -370,10 +359,6 @@ class IterableRequestTask implements Runnable {
         } catch (JSONException e) {
             return null;
         }
-    }
-
-    static boolean matchesJWTErrorCodes(JSONObject jsonResponse) {
-        return matchesErrorCode(jsonResponse, ERROR_CODE_INVALID_JWT_PAYLOAD) || matchesErrorCode(jsonResponse, ERROR_CODE_MISSING_JWT_PAYLOAD) || matchesErrorCode(jsonResponse, ERROR_CODE_JWT_USER_IDENTIFIERS_MISMATCHED);
     }
 
     private static void logError(IterableApiRequest iterableApiRequest, String baseUrl, Exception e) {
@@ -490,6 +475,7 @@ class IterableApiRequest {
     final String requestType;
     final String authToken;
     private @Nullable IterableRequestRetryState retryState;
+    private @Nullable IterableRemoteRetryConfig remoteRetryConfig;
 
     private ProcessorType processorType = ProcessorType.ONLINE;
     IterableHelper.IterableActionHandler legacyCallback;
@@ -527,6 +513,14 @@ class IterableApiRequest {
 
     void copyRetryStateFrom(@NonNull IterableApiRequest request) {
         setRetryState(request.retryState);
+    }
+
+    void setRemoteRetryConfig(@Nullable IterableRemoteRetryConfig remoteRetryConfig) {
+        this.remoteRetryConfig = remoteRetryConfig;
+    }
+
+    boolean isAutoRetryOnJwtFailure() {
+        return remoteRetryConfig != null && remoteRetryConfig.isAutoRetryEnabled();
     }
 
     boolean canRetry() {

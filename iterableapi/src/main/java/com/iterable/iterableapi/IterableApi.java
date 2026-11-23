@@ -45,7 +45,7 @@ public class IterableApi {
 
     final IterableRemoteRetryConfig remoteRetryConfig = new IterableRemoteRetryConfig();
     IterableApiClient apiClient = new IterableApiClient(new IterableApiAuthProvider(),
-            IterableRequestDispatchers.sdk(), remoteRetryConfig);
+            IterableRequestDispatchers.sdk(), remoteRetryConfig, () -> config.networkRetryPolicy);
     final ApiEndpointClassification apiEndpointClassification = new ApiEndpointClassification();
     private static final UnknownUserMerge unknownUserMerge = new UnknownUserMerge();
     private @Nullable UnknownUserManager unknownUserManager;
@@ -990,7 +990,7 @@ public class IterableApi {
     void setRequestDispatcher(IterableRequestDispatcher requestDispatcher) {
         apiClient = new IterableApiClient(new IterableApiAuthProvider(),
                 IterableRequestDispatchers.same(Objects.requireNonNull(requestDispatcher)),
-                remoteRetryConfig);
+                remoteRetryConfig, () -> config.networkRetryPolicy);
     }
 //endregion
 

@@ -20,6 +20,8 @@ class OfflineRequestProcessor implements RequestProcessor {
     private IterableTaskStorage taskStorage;
     private HealthMonitor healthMonitor;
     private final IterableRequestDispatcher immediateRequestDispatcher;
+    private final IterableApiClient.NetworkRetryPolicyProvider networkRetryPolicyProvider;
+    private final IterableRemoteRetryConfig remoteRetryConfig;
 
     private static final Set<String> offlineApiSet = new HashSet<>(Arrays.asList(
             IterableConstants.ENDPOINT_TRACK,
@@ -40,9 +42,13 @@ class OfflineRequestProcessor implements RequestProcessor {
     OfflineRequestProcessor(
             Context context,
             IterableRequestDispatcher immediateRequestDispatcher,
-            IterableRequestDispatcher offlineRequestDispatcher
+            IterableRequestDispatcher offlineRequestDispatcher,
+            IterableRemoteRetryConfig remoteRetryConfig,
+            IterableApiClient.NetworkRetryPolicyProvider networkRetryPolicyProvider
     ) {
         this.immediateRequestDispatcher = immediateRequestDispatcher;
+        this.networkRetryPolicyProvider = networkRetryPolicyProvider;
+        this.remoteRetryConfig = remoteRetryConfig;
         IterableNetworkConnectivityManager networkConnectivityManager = IterableNetworkConnectivityManager.sharedInstance(context);
         taskStorage = IterableTaskStorage.sharedInstance(context);
         healthMonitor = new HealthMonitor(taskStorage);
@@ -52,7 +58,8 @@ class OfflineRequestProcessor implements RequestProcessor {
                 networkConnectivityManager,
                 healthMonitor,
                 classification,
-                offlineRequestDispatcher);
+                offlineRequestDispatcher,
+                remoteRetryConfig);
         taskScheduler = new TaskScheduler(
                 taskStorage,
                 taskRunner,
@@ -86,13 +93,17 @@ class OfflineRequestProcessor implements RequestProcessor {
             IterableTaskRunner iterableTaskRunner,
             IterableTaskStorage storage,
             HealthMonitor mockHealthMonitor,
-            IterableRequestDispatcher immediateRequestDispatcher
+            IterableRequestDispatcher immediateRequestDispatcher,
+            IterableRemoteRetryConfig remoteRetryConfig,
+            IterableApiClient.NetworkRetryPolicyProvider networkRetryPolicyProvider
     ) {
         taskRunner = iterableTaskRunner;
         taskScheduler = scheduler;
         taskStorage = storage;
         healthMonitor = mockHealthMonitor;
         this.immediateRequestDispatcher = immediateRequestDispatcher;
+        this.networkRetryPolicyProvider = networkRetryPolicyProvider;
+        this.remoteRetryConfig = remoteRetryConfig;
     }
 
     @Override
@@ -112,6 +123,8 @@ class OfflineRequestProcessor implements RequestProcessor {
         IterableApiRequest request = new IterableApiRequest(apiKey, resourcePath, json, IterableApiRequest.POST, authToken, onSuccess, onFailure);
         if (isRequestOfflineCompatible(request.resourcePath) && healthMonitor.canSchedule()) {
             request.setProcessorType(IterableApiRequest.ProcessorType.OFFLINE);
+            // TaskScheduler sends this request directly if it cannot be stored.
+            request.setRemoteRetryConfig(remoteRetryConfig);
             taskScheduler.scheduleTask(request, onSuccess, onFailure);
         } else {
             immediateRequestDispatcher.execute(request);

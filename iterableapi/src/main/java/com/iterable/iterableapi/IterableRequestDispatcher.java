@@ -2,6 +2,7 @@ package com.iterable.iterableapi;
 
 import android.os.Handler;
 import android.os.Looper;
+import android.os.SystemClock;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
@@ -17,6 +18,10 @@ final class IterableRequestDispatcher {
 
     interface ResponseHandler {
         void onResponse(IterableApiResponse response);
+    }
+
+    interface Clock {
+        long elapsedRealtimeMillis();
     }
 
     private static final RetryScheduler SDK_RETRY_SCHEDULER =
@@ -38,6 +43,7 @@ final class IterableRequestDispatcher {
     private final Executor retryExecutor;
     private final Executor callbackExecutor;
     private final RetryScheduler retryScheduler;
+    private final Clock clock;
 
     static IterableRequestDispatcher online() {
         return ONLINE_DISPATCHER;
@@ -69,10 +75,25 @@ final class IterableRequestDispatcher {
             Executor callbackExecutor,
             RetryScheduler retryScheduler
     ) {
+        this(requestExecutor, retryExecutor, callbackExecutor, retryScheduler, SystemClock::elapsedRealtime);
+    }
+
+    IterableRequestDispatcher(
+            Executor requestExecutor,
+            Executor retryExecutor,
+            Executor callbackExecutor,
+            RetryScheduler retryScheduler,
+            Clock clock
+    ) {
         this.requestExecutor = requestExecutor;
         this.retryExecutor = retryExecutor;
         this.callbackExecutor = callbackExecutor;
         this.retryScheduler = retryScheduler;
+        this.clock = clock;
+    }
+
+    long elapsedRealtimeMillis() {
+        return clock.elapsedRealtimeMillis();
     }
 
     void execute(IterableApiRequest request) {
