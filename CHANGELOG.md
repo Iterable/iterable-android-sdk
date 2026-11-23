@@ -7,6 +7,12 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - Added `IterableNetworkRetryPolicy`, `IterableConfig.Builder.setNetworkRetryPolicy()` and `IterableConfig.getNetworkRetryPolicy()` to configure and read retries for API requests that fail with a server error (5xx), a connection error or a timeout. The policy only takes effect once enabled; when it is not enabled (the default), the SDK's existing request retry behaviour is unchanged. Once enabled, the defaults are 5 attempts, a fixed 2 second interval and a 60 second total deadline. The policy is not applied to requests yet.
 
+### Changed
+- A remote configuration response without `autoRetry` now turns JWT auto retry off, matching iOS. Previously Android kept the last saved value.
+
+### Fixed
+- A remote configuration response without `offlineMode` no longer stops the SDK from reading `autoRetry`. Each field is now applied on its own, and a missing `offlineMode` keeps the saved value. If the remote configuration request fails, the saved values are kept, and an error response body is no longer read as a configuration.
+
 ## [3.11.2]
 
 ### Fixed

@@ -115,6 +115,43 @@ class IterableRequestTaskTest {
     }
 
     @Test
+    fun `auth retry drops modern callbacks on an online request`() {
+        val request = request(
+            mock(IterableHelper.SuccessHandler::class.java),
+            mock(IterableHelper.FailureHandler::class.java)
+        )
+
+        IterableRequestTask.retryRequestWithNewAuthToken(
+            "fresh-token",
+            request,
+            requestDispatcher
+        )
+
+        val retriedRequest = captureDispatchedRequest()
+        assertEquals("fresh-token", retriedRequest.authToken)
+        assertNull(retriedRequest.successCallback)
+        assertNull(retriedRequest.failureCallback)
+    }
+
+    @Test
+    fun `auth retry keeps callbacks that opt in`() {
+        val success = IterableApiRequest.AuthRetrySuccessHandler { }
+        val failure = mock(IterableHelper.FailureHandler::class.java)
+        val request = request(success, failure)
+
+        IterableRequestTask.retryRequestWithNewAuthToken(
+            "fresh-token",
+            request,
+            requestDispatcher
+        )
+
+        val retriedRequest = captureDispatchedRequest()
+        assertEquals("fresh-token", retriedRequest.authToken)
+        assertSame(success, retriedRequest.successCallback)
+        assertSame(failure, retriedRequest.failureCallback)
+    }
+
+    @Test
     fun `auth retry keeps the legacy callback and replaces token`() {
         val callback = mock(IterableHelper.IterableActionHandler::class.java)
         val request = IterableApiRequest(

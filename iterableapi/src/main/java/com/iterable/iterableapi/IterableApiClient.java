@@ -22,6 +22,7 @@ class IterableApiClient {
     private static final String TAG = "IterableApiClient";
     private final @NonNull AuthProvider authProvider;
     private final @NonNull IterableRequestDispatchers requestDispatchers;
+    private final @NonNull IterableRemoteRetryConfig remoteRetryConfig;
     private final OnlineRequestProcessor pushRegistrationRequestProcessor;
     // A newer push action invalidates retries from earlier registration or disable requests.
     private final AtomicLong pushRegistrationRequestGeneration = new AtomicLong();
@@ -46,18 +47,21 @@ class IterableApiClient {
         void resetAuth();
     }
 
-    IterableApiClient(@NonNull AuthProvider authProvider) {
-        this(authProvider, IterableRequestDispatchers.sdk());
-    }
-
     IterableApiClient(
             @NonNull AuthProvider authProvider,
-            @NonNull IterableRequestDispatchers requestDispatchers
+            @NonNull IterableRequestDispatchers requestDispatchers,
+            @NonNull IterableRemoteRetryConfig remoteRetryConfig
     ) {
         this.authProvider = authProvider;
         this.requestDispatchers = requestDispatchers;
+        this.remoteRetryConfig = remoteRetryConfig;
         pushRegistrationRequestProcessor =
                 new OnlineRequestProcessor(requestDispatchers.push());
+    }
+
+    @NonNull
+    IterableRemoteRetryConfig getRemoteRetryConfig() {
+        return remoteRetryConfig;
     }
 
     private synchronized RequestProcessor getRequestProcessor() {
@@ -106,14 +110,15 @@ class IterableApiClient {
                 .hasPendingTasks();
     }
 
-    void getRemoteConfiguration(IterableHelper.IterableActionHandler actionHandler) {
+    void getRemoteConfiguration(@NonNull IterableHelper.SuccessHandler onSuccess, @NonNull IterableHelper.FailureHandler onFailure) {
         JSONObject requestJSON = new JSONObject();
         try {
             requestJSON.putOpt(IterableConstants.KEY_PLATFORM, IterableConstants.ITBL_PLATFORM_ANDROID);
             requestJSON.putOpt(IterableConstants.DEVICE_APP_PACKAGE_NAME, authProvider.getContext().getPackageName());
             requestJSON.put(IterableConstants.ITBL_KEY_SDK_VERSION, IterableConstants.ITBL_KEY_SDK_VERSION_NUMBER);
             requestJSON.put(IterableConstants.ITBL_SYSTEM_VERSION, Build.VERSION.RELEASE);
-            sendGetRequest(IterableConstants.ENDPOINT_GET_REMOTE_CONFIGURATION, requestJSON, actionHandler);
+            IterableApiRequest.AuthRetrySuccessHandler keptOnAuthRetry = onSuccess::onSuccess;
+            sendGetRequest(IterableConstants.ENDPOINT_GET_REMOTE_CONFIGURATION, requestJSON, keptOnAuthRetry, onFailure);
         } catch (JSONException e) {
             e.printStackTrace();
         }

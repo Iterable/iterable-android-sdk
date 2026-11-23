@@ -20,6 +20,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.robolectric.Robolectric;
 import org.robolectric.android.controller.ActivityController;
+import org.robolectric.util.ReflectionHelpers;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -38,8 +39,10 @@ import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertNull;
+import static junit.framework.Assert.assertSame;
 import static junit.framework.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.atLeastOnce;
@@ -900,6 +903,181 @@ public class IterableApiTest extends BaseTest {
 
         IterableActivityMonitor.getInstance().unregisterLifecycleCallbacks(getContext());
         IterableActivityMonitor.instance = new IterableActivityMonitor();
+    }
+
+    private void initWithStoredRemoteConfig(boolean offlineMode, boolean autoRetry) {
+        getContext().getSharedPreferences(IterableConstants.SHARED_PREFS_SAVED_CONFIGURATION, Context.MODE_PRIVATE)
+                .edit()
+                .putBoolean(IterableConstants.SHARED_PREFS_OFFLINE_MODE_KEY, offlineMode)
+                .putBoolean(IterableConstants.SHARED_PREFS_AUTO_RETRY_KEY, autoRetry)
+                .commit();
+        IterableApi.initialize(getContext(), "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
+        clearInvocations(mockApiClient);
+    }
+
+    private void fetchRemoteConfiguration(MockResponse response) throws InterruptedException {
+        server.enqueue(response);
+        IterableApi.getInstance().fetchRemoteConfiguration();
+        RecordedRequest request = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(request);
+        assertTrue(request.getRequestUrl().toString().contains("/getRemoteConfiguration"));
+        shadowOf(getMainLooper()).idle();
+    }
+
+    private boolean storedAutoRetry() {
+        return getContext().getSharedPreferences(IterableConstants.SHARED_PREFS_SAVED_CONFIGURATION, Context.MODE_PRIVATE)
+                .getBoolean(IterableConstants.SHARED_PREFS_AUTO_RETRY_KEY, false);
+    }
+
+    @Test
+    public void testRemoteConfigurationWithoutOfflineModeStillAppliesAutoRetry() throws Exception {
+        initWithStoredRemoteConfig(false, false);
+
+        fetchRemoteConfiguration(new MockResponse().setResponseCode(200)
+                .setBody("{\"" + IterableConstants.KEY_AUTO_RETRY + "\": true}"));
+
+        assertTrue(IterableApi.getInstance().isAutoRetryOnJwtFailure());
+        assertTrue(IterableApi.getInstance().remoteRetryConfig.isAutoRetryEnabled());
+        assertTrue(storedAutoRetry());
+        verify(mockApiClient, never()).setOfflineProcessingEnabled(anyBoolean());
+    }
+
+    @Test
+    public void testRemoteConfigurationWithoutAutoRetryDisablesAutoRetry() throws Exception {
+        initWithStoredRemoteConfig(false, true);
+        assertTrue(IterableApi.getInstance().isAutoRetryOnJwtFailure());
+
+        fetchRemoteConfiguration(new MockResponse().setResponseCode(200)
+                .setBody("{\"" + IterableConstants.KEY_OFFLINE_MODE + "\": false}"));
+
+        assertFalse(IterableApi.getInstance().isAutoRetryOnJwtFailure());
+        assertFalse(IterableApi.getInstance().remoteRetryConfig.isAutoRetryEnabled());
+        assertFalse(storedAutoRetry());
+        verify(mockApiClient).setOfflineProcessingEnabled(false);
+    }
+
+    @Test
+    public void testFailedRemoteConfigurationFetchKeepsStoredAutoRetry() throws Exception {
+        initWithStoredRemoteConfig(false, true);
+
+        fetchRemoteConfiguration(new MockResponse().setResponseCode(401)
+                .setBody("{\"code\": \"BadApiKey\", \"msg\": \"Invalid API key\", \""
+                        + IterableConstants.KEY_OFFLINE_MODE + "\": true, \""
+                        + IterableConstants.KEY_AUTO_RETRY + "\": false}"));
+
+        assertTrue(IterableApi.getInstance().isAutoRetryOnJwtFailure());
+        assertTrue(IterableApi.getInstance().remoteRetryConfig.isAutoRetryEnabled());
+        assertTrue(storedAutoRetry());
+        verify(mockApiClient, never()).setOfflineProcessingEnabled(anyBoolean());
+    }
+
+    @Test
+    public void testRemoteConfigurationAppliedAfterJwtRefreshRetry() throws Exception {
+        initWithStoredRemoteConfig(false, false);
+        ReflectionHelpers.setField(IterableApi.getInstance(), "authManager",
+                new ImmediateRefreshAuthManager(IterableApi.getInstance()));
+        server.enqueue(jwtErrorResponse());
+        server.enqueue(new MockResponse().setResponseCode(200)
+                .setBody("{\"" + IterableConstants.KEY_AUTO_RETRY + "\": true}"));
+
+        IterableApi.getInstance().fetchRemoteConfiguration();
+        assertNotNull(server.takeRequest(1, TimeUnit.SECONDS));
+        RecordedRequest retried = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(retried);
+        assertTrue(retried.getRequestUrl().toString().contains("/getRemoteConfiguration"));
+        assertEquals(IterableConstants.HEADER_SDK_AUTH_FORMAT + ImmediateRefreshAuthManager.FRESH_TOKEN,
+                retried.getHeader(IterableConstants.HEADER_SDK_AUTHORIZATION));
+        shadowOf(getMainLooper()).idle();
+
+        assertTrue(IterableApi.getInstance().isAutoRetryOnJwtFailure());
+        assertTrue(IterableApi.getInstance().remoteRetryConfig.isAutoRetryEnabled());
+        assertTrue(storedAutoRetry());
+    }
+
+    @Test
+    public void testEmbeddedMessagesHandlersIgnoreJwtRefreshRetryResult() throws Exception {
+        initWithEmailAndImmediateRefresh();
+        server.enqueue(jwtErrorResponse());
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("{\"placements\": []}"));
+        IterableHelper.SuccessHandler success = mock(IterableHelper.SuccessHandler.class);
+        IterableHelper.FailureHandler failure = mock(IterableHelper.FailureHandler.class);
+
+        IterableApi.getInstance().getEmbeddedMessages(null, success, failure);
+        assertNotNull(server.takeRequest(1, TimeUnit.SECONDS));
+        assertNotNull(server.takeRequest(1, TimeUnit.SECONDS));
+        shadowOf(getMainLooper()).idle();
+
+        verify(failure, times(1)).onFailure(any(), any());
+        verify(success, never()).onSuccess(any());
+    }
+
+    @Test
+    public void testUpdateEmailHandlersIgnoreJwtRefreshRetryResult() throws Exception {
+        initWithEmailAndImmediateRefresh();
+        server.enqueue(jwtErrorResponse());
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
+        IterableHelper.SuccessHandler success = mock(IterableHelper.SuccessHandler.class);
+        IterableHelper.FailureHandler failure = mock(IterableHelper.FailureHandler.class);
+
+        IterableApi.getInstance().updateEmail("new@email.com", success, failure);
+        assertNotNull(server.takeRequest(1, TimeUnit.SECONDS));
+        RecordedRequest retried = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(retried);
+        assertTrue(retried.getRequestUrl().toString().contains("/" + IterableConstants.ENDPOINT_UPDATE_EMAIL));
+        shadowOf(getMainLooper()).idle();
+
+        verify(failure, times(1)).onFailure(any(), any());
+        verify(success, never()).onSuccess(any());
+    }
+
+    private void initWithEmailAndImmediateRefresh() throws InterruptedException {
+        IterableApi.initialize(getContext(), "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
+        IterableApi.getInstance().setEmail("test@email.com");
+        shadowOf(getMainLooper()).idle();
+        while (server.takeRequest(100, TimeUnit.MILLISECONDS) != null) { }
+        ReflectionHelpers.setField(IterableApi.getInstance(), "authManager",
+                new ImmediateRefreshAuthManager(IterableApi.getInstance()));
+    }
+
+    private static MockResponse jwtErrorResponse() {
+        return new MockResponse().setResponseCode(401)
+                .setBody("{\"code\": \"" + IterableRequestTask.ERROR_CODE_INVALID_JWT_PAYLOAD
+                        + "\", \"msg\": \"JWT token is expired\"}");
+    }
+
+    private static class ImmediateRefreshAuthManager extends IterableAuthManager {
+        static final String FRESH_TOKEN = "fresh-token";
+
+        ImmediateRefreshAuthManager(IterableApi api) {
+            super(api, null, new RetryPolicy(1, 0, RetryPolicy.Type.LINEAR), 60_000);
+        }
+
+        @Override
+        synchronized void scheduleAuthTokenRefresh(
+                long timeDuration,
+                IterableAuthRefreshReason reason,
+                IterableHelper.SuccessHandler successCallback
+        ) {
+            try {
+                successCallback.onSuccess(new JSONObject().put("newAuthToken", FRESH_TOKEN));
+            } catch (JSONException e) {
+                throw new AssertionError(e);
+            }
+        }
+    }
+
+    @Test
+    public void testApiClientSharesRemoteRetryConfigWithApi() {
+        IterableApi api = new IterableApi();
+
+        assertSame(api.remoteRetryConfig, api.apiClient.getRemoteRetryConfig());
+    }
+
+    @Test
+    public void testApiClientSharesRemoteRetryConfigAfterDispatcherChange() {
+        IterableApi api = IterableTestUtils.newApiWithInlineRequests();
+
+        assertSame(api.remoteRetryConfig, api.apiClient.getRemoteRetryConfig());
     }
 
     //region Consent Logging Tests - Direct Unit Tests
