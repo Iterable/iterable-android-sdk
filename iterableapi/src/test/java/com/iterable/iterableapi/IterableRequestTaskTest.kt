@@ -58,6 +58,35 @@ class IterableRequestTaskTest {
     }
 
     @Test
+    fun `server errors follow the legacy retry schedule`() {
+        val expectedDelays = longArrayOf(0, 0, 0, 6000, 8000, 10000)
+
+        for (retryCount in expectedDelays.indices) {
+            val failure = mock(IterableHelper.FailureHandler::class.java)
+            val request = request(onFailure = failure)
+
+            IterableRequestTask(request, retryCount, requestDispatcher).handleResponse(serverError())
+
+            verify(requestDispatcher).retry(request, retryCount + 1, expectedDelays[retryCount])
+            verifyNoInteractions(failure)
+        }
+    }
+
+    @Test
+    fun `code 0 and client errors are not retried by the legacy loop`() {
+        for (code in intArrayOf(0, 400, 401, 404, 429)) {
+            val failure = mock(IterableHelper.FailureHandler::class.java)
+
+            IterableRequestTask(request(onFailure = failure), 0, requestDispatcher).handleResponse(
+                IterableApiResponse.failure(code, null, null, "error $code")
+            )
+
+            verify(failure).onFailure("error $code", null)
+        }
+        verifyNoRetry()
+    }
+
+    @Test
     fun `server error after retry limit calls failure exactly once`() {
         val failure = mock(IterableHelper.FailureHandler::class.java)
         val request = request(onFailure = failure)
@@ -154,6 +183,14 @@ class IterableRequestTaskTest {
         )
 
         assertFalse(captureDispatchedRequest().canRetry())
+    }
+
+    private fun verifyNoRetry() {
+        verify(requestDispatcher, never()).retry(
+            any(IterableApiRequest::class.java),
+            anyInt(),
+            anyLong()
+        )
     }
 
     private fun captureDispatchedRequest(): IterableApiRequest {
