@@ -957,6 +957,45 @@ public class IterableApiTest extends BaseTest {
     }
 
     @Test
+    public void testRemoteConfigurationWithWrongTypeAutoRetryKeepsStoredTrue() throws Exception {
+        initWithStoredRemoteConfig(false, true);
+
+        for (String autoRetry : new String[]{"\"false\"", "0"}) {
+            fetchRemoteConfiguration(new MockResponse().setResponseCode(200)
+                    .setBody("{\"" + IterableConstants.KEY_OFFLINE_MODE + "\": false, \""
+                            + IterableConstants.KEY_AUTO_RETRY + "\": " + autoRetry + "}"));
+
+            assertTrue(autoRetry, IterableApi.getInstance().remoteRetryConfig.isAutoRetryEnabled());
+            assertTrue(autoRetry, storedAutoRetry());
+        }
+        verify(mockApiClient, times(2)).setOfflineProcessingEnabled(false);
+    }
+
+    @Test
+    public void testRemoteConfigurationWithWrongTypeAutoRetryKeepsStoredFalse() throws Exception {
+        initWithStoredRemoteConfig(false, false);
+
+        for (String autoRetry : new String[]{"\"true\"", "1"}) {
+            fetchRemoteConfiguration(new MockResponse().setResponseCode(200)
+                    .setBody("{\"" + IterableConstants.KEY_AUTO_RETRY + "\": " + autoRetry + "}"));
+
+            assertFalse(autoRetry, IterableApi.getInstance().remoteRetryConfig.isAutoRetryEnabled());
+            assertFalse(autoRetry, storedAutoRetry());
+        }
+    }
+
+    @Test
+    public void testRemoteConfigurationWithNullAutoRetryDisablesAutoRetry() throws Exception {
+        initWithStoredRemoteConfig(false, true);
+
+        fetchRemoteConfiguration(new MockResponse().setResponseCode(200)
+                .setBody("{\"" + IterableConstants.KEY_AUTO_RETRY + "\": null}"));
+
+        assertFalse(IterableApi.getInstance().remoteRetryConfig.isAutoRetryEnabled());
+        assertFalse(storedAutoRetry());
+    }
+
+    @Test
     public void testFailedRemoteConfigurationFetchKeepsStoredAutoRetry() throws Exception {
         initWithStoredRemoteConfig(false, true);
 
