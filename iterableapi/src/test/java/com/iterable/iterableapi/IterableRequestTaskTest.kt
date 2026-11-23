@@ -6,6 +6,22 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
+import org.junit.Assert.assertTrue
+import okhttp3.mockwebserver.MockResponse
+import okhttp3.mockwebserver.MockWebServer
+import okhttp3.mockwebserver.SocketPolicy
+import org.junit.After
+import java.io.EOFException
+import java.io.IOException
+import java.net.ConnectException
+import java.net.MalformedURLException
+import java.net.ServerSocket
+import java.net.SocketException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
+import java.util.concurrent.CountDownLatch
+import javax.net.ssl.SSLHandshakeException
+import kotlin.concurrent.thread
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -58,6 +74,160 @@ class IterableRequestTaskTest {
             verify(failure).onFailure("error $code", null)
         }
         verifyNoRetry()
+    }
+
+    @After
+    fun tearDown() {
+        IterableRequestTask.overrideUrl = null
+    }
+
+    @Test
+    fun `legacy loop ignores the network failure marker`() {
+        val failure = mock(IterableHelper.FailureHandler::class.java)
+
+        IterableRequestTask(request(onFailure = failure), 0, requestDispatcher).handleResponse(
+            IterableApiResponse.networkFailure(null, "timeout")
+        )
+
+        verify(failure).onFailure("timeout", null)
+        verifyNoRetry()
+    }
+
+    @Test
+    fun `refused connection is marked as a network failure`() {
+        val server = MockWebServer().apply { start() }
+        val url = server.url("/").toString()
+        server.shutdown()
+
+        val response = execute(url)
+
+        assertEquals(0, response.responseCode)
+        assertTrue(response.networkFailure)
+    }
+
+    @Test
+    fun `dropped connection is marked as a network failure`() {
+        val server = MockWebServer().apply {
+            enqueue(MockResponse().setSocketPolicy(SocketPolicy.DISCONNECT_AT_START))
+            enqueue(MockResponse().setSocketPolicy(SocketPolicy.DISCONNECT_AT_START))
+            start()
+        }
+
+        val response = execute(server.url("/").toString())
+        server.shutdown()
+
+        assertEquals(0, response.responseCode)
+        assertTrue(response.networkFailure)
+    }
+
+    @Test
+    fun `read timeout is marked as a network failure`() {
+        val release = CountDownLatch(1)
+        val response = ServerSocket(0).use { server ->
+            thread {
+                server.accept().use { release.await() }
+            }
+            try {
+                execute("http://127.0.0.1:${server.localPort}/")
+            } finally {
+                release.countDown()
+            }
+        }
+
+        assertEquals(0, response.responseCode)
+        assertTrue(response.errorMessage, response.networkFailure)
+    }
+
+    @Test
+    fun `device-style dropped connections thrown by the connection are network failures`() {
+        val previous = System.getProperty("java.protocol.handler.pkgs")
+        System.setProperty("java.protocol.handler.pkgs", com.iterable.iterableapi.testprotocol.dropped.Handler.PACKAGES)
+        try {
+            for (host in listOf("eof", "eof-cause", "reset-cause")) {
+                val response = execute("dropped://$host/")
+                assertEquals(host, 0, response.responseCode)
+                assertTrue(host, response.networkFailure)
+            }
+            val other = execute("dropped://other/")
+            assertEquals("stream closed", other.errorMessage)
+            assertFalse(other.networkFailure)
+        } finally {
+            if (previous == null) {
+                System.clearProperty("java.protocol.handler.pkgs")
+            } else {
+                System.setProperty("java.protocol.handler.pkgs", previous)
+            }
+        }
+    }
+
+    @Test
+    fun `TLS handshake closed by the server is a network failure`() {
+        val response = ServerSocket(0).use { server ->
+            thread {
+                server.accept().use { socket ->
+                    val input = java.io.DataInputStream(socket.getInputStream())
+                    val header = ByteArray(5)
+                    input.readFully(header)
+                    val length = ((header[3].toInt() and 0xff) shl 8) or (header[4].toInt() and 0xff)
+                    input.readFully(ByteArray(length))
+                }
+            }
+            execute("https://127.0.0.1:${server.localPort}/")
+        }
+
+        assertEquals(0, response.responseCode)
+        assertTrue(response.errorMessage, response.networkFailure)
+    }
+
+    @Test
+    fun `timeouts, DNS failures and dropped connections are network failures`() {
+        val networkFailures = listOf(
+            SocketTimeoutException("Read timed out"),
+            UnknownHostException("api.iterable.com"),
+            ConnectException("Connection refused"),
+            SocketException("Connection reset"),
+            EOFException(),
+            IOException("unexpected end of stream on http://api.iterable.com/...", EOFException("\\n not found")),
+            IOException("unexpected end of stream", SocketException("Connection reset")),
+            IOException("outer", IOException("inner", EOFException()))
+        )
+        for (e in networkFailures) {
+            assertTrue(e.toString(), IterableNetworkRetryClassifier.isNetworkFailure(e))
+        }
+    }
+
+    @Test
+    fun `other IO failures are not network failures`() {
+        val otherFailures = listOf(
+            IOException("stream closed"),
+            IOException("wrapped", IllegalStateException("not network")),
+            SSLHandshakeException("handshake failed"),
+            MalformedURLException("no protocol")
+        )
+        for (e in otherFailures) {
+            assertFalse(e.toString(), IterableNetworkRetryClassifier.isNetworkFailure(e))
+        }
+    }
+
+    @Test
+    fun `TLS and bad URL failures are not network failures`() {
+        val tls = ServerSocket(0).use { server ->
+            thread {
+                server.accept().use { socket ->
+                    socket.getInputStream().read(ByteArray(512))
+                    socket.getOutputStream().write("HTTP/1.1 400 Bad Request\r\n\r\n".toByteArray())
+                    socket.getOutputStream().flush()
+                    socket.getInputStream().readBytes()
+                }
+            }
+            execute("https://127.0.0.1:${server.localPort}/")
+        }
+        val badUrl = execute("notaprotocol://api.iterable.com/")
+
+        for (response in listOf(tls, badUrl)) {
+            assertEquals(0, response.responseCode)
+            assertFalse(response.errorMessage, response.networkFailure)
+        }
     }
 
     @Test
@@ -154,6 +324,11 @@ class IterableRequestTaskTest {
         )
 
         assertFalse(captureDispatchedRequest().canRetry())
+    }
+
+    private fun execute(baseUrl: String): IterableApiResponse {
+        IterableRequestTask.overrideUrl = baseUrl
+        return IterableRequestTask.executeApiRequest(request(), requestDispatcher)
     }
 
     private fun verifyNoRetry() {

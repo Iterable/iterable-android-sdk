@@ -6,6 +6,12 @@ import androidx.annotation.Nullable;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.EOFException;
+import java.io.IOException;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
+import java.net.UnknownHostException;
+
 class IterableNetworkRetryClassifier {
     static final String ERROR_CODE_INVALID_JWT_PAYLOAD = "InvalidJwtPayload";
     static final String ERROR_CODE_MISSING_JWT_PAYLOAD = "BadAuthorizationHeader";
@@ -38,6 +44,26 @@ class IterableNetworkRetryClassifier {
             return Outcome.AUTH;
         }
         return Outcome.TERMINAL;
+    }
+
+    private static final int MAX_CAUSE_DEPTH = 8;
+
+    // On devices a server-dropped connection surfaces as a plain IOException caused by an EOF or socket error.
+    static boolean isNetworkFailure(@NonNull IOException e) {
+        if (e instanceof SocketTimeoutException
+                || e instanceof UnknownHostException
+                || e instanceof SocketException
+                || e instanceof EOFException) {
+            return true;
+        }
+        Throwable cause = e.getCause();
+        for (int depth = 0; cause != null && depth < MAX_CAUSE_DEPTH; depth++) {
+            if (cause instanceof EOFException || cause instanceof SocketException) {
+                return true;
+            }
+            cause = cause.getCause();
+        }
+        return false;
     }
 
     /**
