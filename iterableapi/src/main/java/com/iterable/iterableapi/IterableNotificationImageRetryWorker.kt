@@ -21,7 +21,6 @@ internal class IterableNotificationImageRetryWorker(
         private const val TAG = "IterableNotificationImageRetryWorker"
 
         const val MAX_RETRY_AGE_MILLIS = 24L * 60 * 60 * 1000
-        private const val IMAGE_DOWNLOAD_TIMEOUT_MILLIS = 15_000
         // Android caches failed DNS lookups for 2s, so retrying sooner reuses the first failure.
         const val MIN_RETRY_DELAY_AFTER_POST_MILLIS = 3_000L
         const val KEY_NOTIFICATION_ID = "notification_id"
@@ -75,7 +74,6 @@ internal class IterableNotificationImageRetryWorker(
         if (isStopped) return
 
         val notificationBuilder = IterableNotificationHelper.createNotification(applicationContext, extras) ?: return
-        notificationBuilder.imageTimeoutMillis = IMAGE_DOWNLOAD_TIMEOUT_MILLIS
         notificationBuilder.extras.putString(IterableNotificationWorker.EXTRA_MESSAGE_ID, messageId)
         notificationBuilder
             .setOnlyAlertOnce(true)

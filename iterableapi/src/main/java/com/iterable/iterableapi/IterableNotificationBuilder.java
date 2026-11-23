@@ -10,7 +10,9 @@ import android.os.Bundle;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.RemoteInput;
 
+import java.io.FilterInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
@@ -20,6 +22,7 @@ import java.net.URLConnection;
  */
 public class IterableNotificationBuilder extends NotificationCompat.Builder {
     static final String TAG = "IterableNotification";
+    static final int IMAGE_DOWNLOAD_TIMEOUT_MILLIS = 15_000;
     final Context context;
 
     private boolean isGhostPush;
@@ -29,7 +32,7 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
     IterableNotificationData iterableNotificationData;
     boolean imageLoaded;
     boolean imageDownloadFailed;
-    int imageTimeoutMillis;
+    int imageTimeoutMillis = IMAGE_DOWNLOAD_TIMEOUT_MILLIS;
 
     /**
      * Creates a custom Notification builder
@@ -80,13 +83,16 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
             try {
                 URL url = new URL(this.imageUrl);
                 URLConnection connection = url.openConnection();
-                if (imageTimeoutMillis > 0) {
-                    connection.setConnectTimeout(imageTimeoutMillis);
-                    connection.setReadTimeout(imageTimeoutMillis);
-                }
+                applyImageTimeouts(connection, imageTimeoutMillis);
                 connection.setDoInput(true);
                 connection.connect();
-                Bitmap notificationImage = BitmapFactory.decodeStream(connection.getInputStream());
+                Bitmap notificationImage;
+                try (ReadErrorRecordingStream input = new ReadErrorRecordingStream(connection.getInputStream())) {
+                    notificationImage = BitmapFactory.decodeStream(input);
+                    if (input.readError != null) {
+                        throw input.readError;
+                    }
+                }
                 if (notificationImage != null) {
                     style = new NotificationCompat.BigPictureStyle()
                             .bigPicture(notificationImage)
@@ -112,6 +118,54 @@ public class IterableNotificationBuilder extends NotificationCompat.Builder {
         this.setStyle(style);
 
         return super.build();
+    }
+
+    static void applyImageTimeouts(URLConnection connection, int timeoutMillis) {
+        connection.setConnectTimeout(timeoutMillis);
+        connection.setReadTimeout(timeoutMillis);
+    }
+
+    // BitmapFactory swallows read errors, so the first one is kept here and rethrown after decoding.
+    private static final class ReadErrorRecordingStream extends FilterInputStream {
+        IOException readError;
+
+        ReadErrorRecordingStream(InputStream in) {
+            super(in);
+        }
+
+        @Override
+        public int read(byte[] b, int off, int len) throws IOException {
+            try {
+                return super.read(b, off, len);
+            } catch (IOException e) {
+                throw record(e);
+            }
+        }
+
+        @Override
+        public long skip(long n) throws IOException {
+            try {
+                return super.skip(n);
+            } catch (IOException e) {
+                throw record(e);
+            }
+        }
+
+        @Override
+        public int available() throws IOException {
+            try {
+                return super.available();
+            } catch (IOException e) {
+                throw record(e);
+            }
+        }
+
+        private IOException record(IOException e) {
+            if (readError == null) {
+                readError = e;
+            }
+            return e;
+        }
     }
 
     /**

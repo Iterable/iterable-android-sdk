@@ -26,18 +26,24 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 import org.robolectric.annotation.Config;
+import org.robolectric.annotation.GraphicsMode;
 
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
+import okhttp3.mockwebserver.SocketPolicy;
+import okio.Buffer;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -48,6 +54,9 @@ import static org.mockito.Mockito.when;
 public class IterableNotificationFlowTest extends BaseTest {
 
     private static final int IMAGE_PUSH_NOTIFICATION_ID = Math.abs("abc123imagepush".hashCode());
+    private static final int TEST_IMAGE_TIMEOUT_MILLIS = 250;
+    private static final long IMAGE_BODY_STALL_MILLIS = 1_000;
+    private static final long STALLED_SERVER_GIVE_UP_MILLIS = 5_000;
 
     private MockWebServer server;
     private IterableNotificationHelper.IterableNotificationHelperImpl helperSpy;
@@ -534,6 +543,69 @@ public class IterableNotificationFlowTest extends BaseTest {
     }
 
     @Test
+    @Config(sdk = {31, 34})
+    public void testStalledImageDownloadTimesOutPostsTextOnlyAndSchedulesRetry() throws Exception {
+        assertStalledImageDownloadTimesOutAndPostsTextOnly(new MockResponse().setSocketPolicy(SocketPolicy.NO_RESPONSE));
+
+        List<WorkInfo> retries = getImageRetryWork();
+        assertEquals(1, retries.size());
+        assertEquals(WorkInfo.State.ENQUEUED, retries.get(0).getState());
+    }
+
+    @Test
+    @Config(sdk = 30)
+    public void testStalledImageDownloadBelowApi31TimesOutPostsTextOnlyWithoutRetry() throws Exception {
+        assertStalledImageDownloadTimesOutAndPostsTextOnly(new MockResponse().setSocketPolicy(SocketPolicy.NO_RESPONSE));
+
+        assertTrue("No image retry should be scheduled below API 31", getImageRetryWork().isEmpty());
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    public void testImageBodyStallTimesOutPostsTextOnlyAndSchedulesRetry() throws Exception {
+        assertStalledImageDownloadTimesOutAndPostsTextOnly(getImageResponseStallingHalfway());
+
+        List<WorkInfo> retries = getImageRetryWork();
+        assertEquals(1, retries.size());
+        assertEquals(WorkInfo.State.ENQUEUED, retries.get(0).getState());
+    }
+
+    @Test
+    @Config(sdk = 30)
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    public void testImageBodyStallBelowApi31TimesOutPostsTextOnlyWithoutRetry() throws Exception {
+        assertStalledImageDownloadTimesOutAndPostsTextOnly(getImageResponseStallingHalfway());
+
+        assertTrue("No image retry should be scheduled below API 31", getImageRetryWork().isEmpty());
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    public void testUndecodableImagePostsTextOnlyWithoutRetry() throws Exception {
+        MockWebServer imageServer = new MockWebServer();
+        imageServer.enqueue(new MockResponse().setBody("not an image"));
+        imageServer.start();
+        IterableFirebaseMessagingService.handleMessageReceived(getContext(), imagePush(imageServer.url("/image.png").toString()));
+        imageServer.shutdown();
+
+        assertEquals(1, imageServer.getRequestCount());
+        StatusBarNotification[] shown = getNotificationManager().getActiveNotifications();
+        assertEquals(1, shown.length);
+        assertFalse(shown[0].getNotification().extras.containsKey(Notification.EXTRA_PICTURE));
+        assertTrue("No image retry should be scheduled when the image can't be decoded", getImageRetryWork().isEmpty());
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    public void testStallAfterCompleteImageStillShowsImageWithoutRetry() throws Exception {
+        Buffer body = IterableTestUtils.getImageResponse().getBody();
+        long imageSize = body.size();
+        body.write(new byte[4096]);
+        assertImageShownWithoutRetry(new MockResponse().setBody(body)
+                .throttleBody(imageSize, IMAGE_BODY_STALL_MILLIS, TimeUnit.MILLISECONDS));
+    }
+
+    @Test
     public void testSuccessfulImageDownloadDoesNotScheduleRetry() throws Exception {
         String imageUrl = getClass().getClassLoader().getResource("350x150.png").toString();
 
@@ -543,6 +615,66 @@ public class IterableNotificationFlowTest extends BaseTest {
         assertEquals(1, shown.length);
         assertTrue(shown[0].getNotification().extras.containsKey(Notification.EXTRA_PICTURE));
         assertTrue("No image retry should be scheduled when the image loads", getImageRetryWork().isEmpty());
+    }
+
+    private void shortenImageTimeout() {
+        doAnswer(invocation -> {
+            IterableNotificationBuilder builder = (IterableNotificationBuilder) invocation.callRealMethod();
+            builder.imageTimeoutMillis = TEST_IMAGE_TIMEOUT_MILLIS;
+            return builder;
+        }).when(helperSpy).createNotification(any(), any());
+    }
+
+    private void assertImageShownWithoutRetry(MockResponse response) throws Exception {
+        shortenImageTimeout();
+        MockWebServer imageServer = new MockWebServer();
+        imageServer.enqueue(response);
+        imageServer.start();
+        IterableFirebaseMessagingService.handleMessageReceived(getContext(), imagePush(imageServer.url("/image.png").toString()));
+        imageServer.shutdown();
+
+        StatusBarNotification[] shown = getNotificationManager().getActiveNotifications();
+        assertEquals(1, shown.length);
+        assertTrue("Notification should show the image",
+                shown[0].getNotification().extras.containsKey(Notification.EXTRA_PICTURE));
+        assertTrue("No image retry should be scheduled when the image loads", getImageRetryWork().isEmpty());
+    }
+
+    private void assertStalledImageDownloadTimesOutAndPostsTextOnly(MockResponse stalledResponse) throws Exception {
+        shortenImageTimeout();
+        MockWebServer stalledServer = new MockWebServer();
+        stalledServer.enqueue(stalledResponse);
+        stalledServer.start();
+        // Without a timeout the download never returns, so closing the server makes the test fail instead of hang.
+        ScheduledExecutorService watchdog = Executors.newSingleThreadScheduledExecutor();
+        watchdog.schedule(() -> {
+            stalledServer.shutdown();
+            return null;
+        }, STALLED_SERVER_GIVE_UP_MILLIS, TimeUnit.MILLISECONDS);
+        long elapsedMillis;
+        try {
+            long start = System.nanoTime();
+            IterableFirebaseMessagingService.handleMessageReceived(getContext(),
+                    imagePush(stalledServer.url("/image.png").toString()));
+            elapsedMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
+            assertEquals(1, stalledServer.getRequestCount());
+        } finally {
+            watchdog.shutdownNow();
+            stalledServer.shutdown();
+        }
+
+        assertTrue("Image download should time out, took " + elapsedMillis + "ms",
+                elapsedMillis < STALLED_SERVER_GIVE_UP_MILLIS);
+        StatusBarNotification[] shown = getNotificationManager().getActiveNotifications();
+        assertEquals(1, shown.length);
+        assertEquals(IMAGE_PUSH_NOTIFICATION_ID, shown[0].getId());
+        assertFalse("Notification should be posted without the image",
+                shown[0].getNotification().extras.containsKey(Notification.EXTRA_PICTURE));
+    }
+
+    private MockResponse getImageResponseStallingHalfway() throws Exception {
+        MockResponse response = IterableTestUtils.getImageResponse();
+        return response.throttleBody(response.getBody().size() / 2, IMAGE_BODY_STALL_MILLIS, TimeUnit.MILLISECONDS);
     }
 
     private RemoteMessage imagePush(String imageUrl) throws Exception {
