@@ -244,7 +244,7 @@ class IterableRequestTaskTest {
         val retries = PendingRetries()
         val success = mock(IterableHelper.SuccessHandler::class.java)
         val failure = mock(IterableHelper.FailureHandler::class.java)
-        val lastApproval = 60_000L - 2_000L - IterableNetworkRetryClassifier.RETRY_START_TOLERANCE_MILLIS
+        val lastApproval = 57_500L
         val server = MockWebServer().apply {
             dispatcher = object : Dispatcher() {
                 override fun dispatch(request: RecordedRequest): MockResponse {
@@ -269,6 +269,32 @@ class IterableRequestTaskTest {
             assertEquals(2, server.requestCount)
             verify(success).onSuccess(any())
             verifyNoInteractions(failure)
+        } finally {
+            server.shutdown()
+        }
+    }
+
+    @Test
+    fun `failure just after the last approval moment is not retried`() {
+        val clock = ManualClock()
+        val retries = PendingRetries()
+        val failure = mock(IterableHelper.FailureHandler::class.java)
+        val server = MockWebServer().apply {
+            dispatcher = object : Dispatcher() {
+                override fun dispatch(request: RecordedRequest): MockResponse {
+                    clock.now = 57_501L
+                    return MockResponse().setResponseCode(500).setBody("{}")
+                }
+            }
+            start()
+        }
+        IterableRequestTask.overrideUrl = server.url("/").toString()
+
+        try {
+            dispatcher(clock, retries).execute(policyRequest(failure))
+
+            assertTrue(retries.tasks.isEmpty())
+            verify(failure).onFailure(eq("Internal Server Error"), any())
         } finally {
             server.shutdown()
         }

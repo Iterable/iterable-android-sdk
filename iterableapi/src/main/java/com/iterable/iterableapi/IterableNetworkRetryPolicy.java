@@ -53,7 +53,8 @@ public final class IterableNetworkRetryPolicy {
 
     /**
      * Maximum time in seconds from the start of the first attempt to the start of the last retry.
-     * 0 means no deadline.
+     * A retry is only approved if it would start at least 0.5 seconds before the deadline, so a non-zero
+     * deadline under 0.5 seconds never retries. 0 means no deadline.
      */
     public double getTotalDeadline() {
         return totalDeadlineMillis / 1000d;
@@ -168,6 +169,8 @@ public final class IterableNetworkRetryPolicy {
         }
 
         /**
+         * A retry is only approved if it would start at least 0.5 seconds before the deadline, so a non-zero
+         * deadline under 0.5 seconds never retries.
          * Invalid values (negative, {@code NaN} or infinite) are logged and ignored rather than throwing,
          * leaving the deadline at whatever it was before the call: 60 seconds unless an earlier call set
          * something else. Values above ~10 years are clamped to that ceiling.
