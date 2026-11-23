@@ -29,7 +29,14 @@ class OnlineRequestProcessor implements RequestProcessor {
 
     @Override
     public void processPostRequest(@Nullable String apiKey, @NonNull String resourcePath, @NonNull JSONObject json, String authToken, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
-        IterableApiRequest request = new IterableApiRequest(apiKey, resourcePath, addCreatedAtToJson(json), IterableApiRequest.POST, authToken, onSuccess, onFailure);
+        processPostRequest(apiKey, null, resourcePath, json, authToken, onSuccess, onFailure);
+    }
+
+    @Override
+    public void processPostRequest(@Nullable String apiKey, @Nullable String baseUrl, @NonNull String resourcePath, @NonNull JSONObject json, String authToken, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
+        // A captured endpoint has to be honoured here too, not only on the offline path: the request
+        // is executed asynchronously, so the live region can change between here and the send.
+        IterableApiRequest request = new IterableApiRequest(apiKey, baseUrl, resourcePath, addCreatedAtToJson(json), IterableApiRequest.POST, authToken, onSuccess, onFailure);
         new IterableRequestTask().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, request);
     }
 

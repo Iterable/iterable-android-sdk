@@ -608,7 +608,16 @@ class IterableApiClient {
         }
     }
 
-    protected void disableToken(@Nullable String email, @Nullable String userId, @Nullable String authToken, @NonNull String deviceToken, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
+    /**
+     * @param apiKey key captured when the disable was initiated, or null to use the live key.
+     *               users/disableDevice is project-scoped on the backend, so a disable that resolves
+     *               its key at send time can land on the wrong project when the key changes while
+     *               the FCM token lookup is in flight.
+     * @param baseUrl region endpoint captured with {@code apiKey}, or null to use the live region.
+     *                Passed together with the key so the request cannot end up carrying one project's
+     *                key to another project's endpoint.
+     */
+    protected void disableToken(@Nullable String email, @Nullable String userId, @Nullable String authToken, @Nullable String apiKey, @Nullable String baseUrl, @NonNull String deviceToken, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
         JSONObject requestJSON = new JSONObject();
         try {
             requestJSON.put(IterableConstants.KEY_TOKEN, deviceToken);
@@ -618,7 +627,7 @@ class IterableApiClient {
                 requestJSON.put(IterableConstants.KEY_USER_ID, userId);
             }
 
-            sendPostRequest(IterableConstants.ENDPOINT_DISABLE_DEVICE, requestJSON, authToken, onSuccess, onFailure);
+            sendPostRequest(IterableConstants.ENDPOINT_DISABLE_DEVICE, requestJSON, authToken, apiKey, baseUrl, onSuccess, onFailure);
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -765,7 +774,21 @@ class IterableApiClient {
     }
 
     void sendPostRequest(@NonNull String resourcePath, @NonNull JSONObject json, @Nullable String authToken, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
-        getRequestProcessor().processPostRequest(authProvider.getApiKey(), resourcePath, json, authToken, onSuccess, onFailure);
+        sendPostRequest(resourcePath, json, authToken, null, null, onSuccess, onFailure);
+    }
+
+    /**
+     * @param apiKeyOverride key captured by the caller, used instead of the live key. Only set by
+     *                       callers whose request was built before the live key could change under
+     *                       them; null keeps the existing behaviour of resolving it now.
+     * @param baseUrlOverride region endpoint captured by the same caller at the same moment. Set with
+     *                        {@code apiKeyOverride} rather than on its own, because a captured key
+     *                        sent to whichever region happens to be live is exactly the mismatch the
+     *                        capture exists to prevent; null keeps the existing behaviour.
+     */
+    void sendPostRequest(@NonNull String resourcePath, @NonNull JSONObject json, @Nullable String authToken, @Nullable String apiKeyOverride, @Nullable String baseUrlOverride, @Nullable IterableHelper.SuccessHandler onSuccess, @Nullable IterableHelper.FailureHandler onFailure) {
+        String apiKey = (apiKeyOverride != null) ? apiKeyOverride : authProvider.getApiKey();
+        getRequestProcessor().processPostRequest(apiKey, baseUrlOverride, resourcePath, json, authToken, onSuccess, onFailure);
     }
 
     /**
@@ -783,8 +806,28 @@ class IterableApiClient {
     }
 
     void onLogout() {
-        getRequestProcessor().onLogout(authProvider.getContext());
+        purgeOfflineQueue();
         authProvider.resetAuth();
+    }
+
+    /**
+     * Purges the persisted offline queue, preserving queued device disables. Runs synchronously on
+     * the calling thread, so callers do not have to wait for the purge to finish.
+     */
+    void purgeOfflineQueue() {
+        getRequestProcessor().onLogout(authProvider.getContext());
+    }
+
+    /**
+     * Re-binds the offline task runner to the current auth manager. Needed after
+     * {@link IterableApi#switchProject} replaces the auth manager, because the request processor
+     * (and the task runner it owns) is reused across the switch.
+     */
+    void rebindAuthTokenListener() {
+        RequestProcessor processor = getRequestProcessor();
+        if (processor instanceof OfflineRequestProcessor) {
+            ((OfflineRequestProcessor) processor).registerAuthTokenListener();
+        }
     }
 
     void mergeUser(String sourceEmail, String sourceUserId, String destinationEmail, String destinationUserId, @Nullable IterableHelper.SuccessHandler successHandler, @Nullable IterableHelper.FailureHandler failureHandler) {

@@ -10,6 +10,7 @@ import android.os.Looper;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
 
 import org.json.JSONException;
@@ -65,11 +66,14 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
     private static void retryRequestWithNewAuthToken(String newAuthToken, IterableApiRequest iterableApiRequest) {
         IterableApiRequest request = new IterableApiRequest(
                 iterableApiRequest.apiKey,
+                iterableApiRequest.baseUrl,
                 iterableApiRequest.resourcePath,
                 iterableApiRequest.json,
                 iterableApiRequest.requestType,
                 newAuthToken,
-                iterableApiRequest.legacyCallback);
+                null,
+                null);
+        request.legacyCallback = iterableApiRequest.legacyCallback;
         IterableRequestTask requestTask = new IterableRequestTask();
         requestTask.execute(request);
     }
@@ -84,7 +88,7 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
             HttpURLConnection urlConnection = null;
 
             IterableLogger.v(TAG, ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
-            String baseUrl = getBaseUrl();
+            String baseUrl = getBaseUrl(iterableApiRequest);
 
             try {
                 if (iterableApiRequest.requestType == IterableApiRequest.GET) {
@@ -280,16 +284,35 @@ class IterableRequestTask extends AsyncTask<IterableApiRequest, Void, IterableAp
         }
     }
 
-    private static String getBaseUrl() {
-        IterableConfig config = IterableApi.getInstance().config;
-        IterableDataRegion dataRegion = config.dataRegion;
-        String baseUrl = dataRegion.getEndpoint();
-
+    /**
+     * Resolves the endpoint for a request, preferring the base URL the request was created with.
+     * Offline tasks persist their base URL, so a task rehydrated from the database reaches the
+     * region it was scheduled for rather than whichever region happens to be live now.
+     * {@link #getBaseUrl()} is only consulted for requests that carry no base URL, which keeps
+     * behaviour unchanged for tasks persisted by earlier SDK versions.
+     */
+    @VisibleForTesting
+    static String getBaseUrl(@Nullable IterableApiRequest iterableApiRequest) {
         if (overrideUrl != null && !overrideUrl.isEmpty()) {
-            baseUrl = overrideUrl;
+            return overrideUrl;
         }
+        if (iterableApiRequest != null && iterableApiRequest.baseUrl != null && !iterableApiRequest.baseUrl.isEmpty()) {
+            return iterableApiRequest.baseUrl;
+        }
+        return getBaseUrl();
+    }
 
-        return baseUrl;
+    private static String getBaseUrl() {
+        return IterableApi.getInstance().config.dataRegion.getEndpoint();
+    }
+
+    /**
+     * The region endpoint bound to a request when it is created, so it can be persisted alongside
+     * the API key. Deliberately ignores {@link #overrideUrl} so the debug override stays dynamic
+     * and is never baked into the offline queue.
+     */
+    static String getRegionBaseUrl() {
+        return getBaseUrl();
     }
 
     private static boolean matchesErrorCode(JSONObject jsonResponse, String errorCode) {
@@ -456,6 +479,12 @@ class IterableApiRequest {
     static final String GET = "GET";
     static final String POST = "POST";
 
+    /**
+     * JSON key for the endpoint a persisted task was created for. Absent from tasks written by SDK
+     * versions that did not persist it yet.
+     */
+    static final String KEY_BASE_URL = "baseUrl";
+
     final String apiKey;
     final String baseUrl;
     final String resourcePath;
@@ -532,6 +561,8 @@ class IterableApiRequest {
         jsonObject.put("authToken", this.authToken);
         jsonObject.put("requestType", this.requestType);
         jsonObject.put("data", this.json);
+        // Omitted when null so tasks written by earlier SDK versions keep the exact same shape.
+        jsonObject.putOpt(KEY_BASE_URL, this.baseUrl);
         return jsonObject;
     }
 
@@ -559,7 +590,10 @@ class IterableApiRequest {
                 authToken = "";
             }
             JSONObject json = jsonData.getJSONObject("data");
-            return new IterableApiRequest(apikey, resourcePath, json, requestType, authToken, onSuccess, onFailure);
+            // Tasks persisted before baseUrl was part of the schema restore with a null baseUrl and
+            // fall back to IterableRequestTask.getBaseUrl() at flush time, as they always did.
+            String baseUrl = jsonData.isNull(KEY_BASE_URL) ? null : jsonData.optString(KEY_BASE_URL, null);
+            return new IterableApiRequest(apikey, baseUrl, resourcePath, json, requestType, authToken, onSuccess, onFailure);
         } catch (JSONException e) {
             IterableLogger.e(TAG, "Failed to create Iterable request from JSON");
         }

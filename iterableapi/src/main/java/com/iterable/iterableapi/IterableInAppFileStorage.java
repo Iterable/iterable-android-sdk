@@ -181,6 +181,11 @@ public class IterableInAppFileStorage implements IterableInAppStorage, IterableI
         }
     }
 
+    synchronized void saveNow() {
+        fileOperationHandler.removeMessages(OPERATION_SAVE);
+        saveMessages();
+    }
+
     private void saveMessagesInBackground() {
         if (!fileOperationHandler.hasMessages(OPERATION_SAVE)) {
             fileOperationHandler.sendEmptyMessageDelayed(OPERATION_SAVE, 100);
