@@ -24,6 +24,7 @@ internal class IterableNotificationWorker(
         private const val FOREGROUND_NOTIFICATION_ID = 10101
 
         const val KEY_NOTIFICATION_DATA_JSON = "notification_data_json"
+        const val EXTRA_MESSAGE_ID = "iterable_message_id"
 
         @JvmStatic
         fun createInputData(extras: Bundle): Data {
@@ -112,12 +113,29 @@ internal class IterableNotificationWorker(
                 return Result.success()
             }
 
+            val messageId = notificationBuilder.iterableNotificationData?.messageId
+            // Only on API 31+ does an expedited job with a network constraint bypass the standby/Doze network block.
+            val canRetryImage = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !messageId.isNullOrEmpty()
+            if (canRetryImage) {
+                notificationBuilder.extras.putString(EXTRA_MESSAGE_ID, messageId)
+            }
+
             IterableNotificationHelper.postNotificationOnDevice(
                 applicationContext,
                 notificationBuilder
             )
 
             IterableLogger.d(TAG, "Notification posted successfully")
+
+            if (canRetryImage && notificationBuilder.imageDownloadFailed) {
+                try {
+                    IterableNotificationWorkScheduler(applicationContext).scheduleImageRetry(
+                        extras, notificationBuilder.requestCode, System.currentTimeMillis()
+                    )
+                } catch (e: Exception) {
+                    IterableLogger.e(TAG, "Failed to schedule notification image retry", e)
+                }
+            }
             return Result.success()
 
         } catch (e: Exception) {

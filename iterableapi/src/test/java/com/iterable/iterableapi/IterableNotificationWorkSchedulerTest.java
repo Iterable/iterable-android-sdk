@@ -2,9 +2,12 @@ package com.iterable.iterableapi;
 
 import android.os.Bundle;
 
+import androidx.work.Constraints;
 import androidx.work.Data;
 import androidx.work.OneTimeWorkRequest;
+import androidx.work.OutOfQuotaPolicy;
 import androidx.work.WorkManager;
+import androidx.work.impl.model.WorkSpec;
 
 import org.junit.After;
 import org.junit.Before;
@@ -516,5 +519,23 @@ public class IterableNotificationWorkSchedulerTest extends BaseTest {
         scheduler.scheduleNotificationWork(data, null);
 
         verify(mockWorkManager).enqueue(any(OneTimeWorkRequest.class));
+    }
+
+    @Test
+    public void testInitialNotificationWorkIsExpeditedWithoutConstraints() {
+        Bundle data = new Bundle();
+        data.putString("key", "value");
+
+        scheduler.scheduleNotificationWork(data, null);
+
+        ArgumentCaptor<OneTimeWorkRequest> requestCaptor =
+            ArgumentCaptor.forClass(OneTimeWorkRequest.class);
+        verify(mockWorkManager).enqueue(requestCaptor.capture());
+
+        WorkSpec spec = requestCaptor.getValue().getWorkSpec();
+        assertTrue("Initial notification work should be expedited", spec.expedited);
+        assertEquals("Initial notification work must not wait on any constraint",
+                Constraints.NONE, spec.constraints);
+        assertEquals(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST, spec.outOfQuotaPolicy);
     }
 }
