@@ -189,6 +189,11 @@ public class IterableConfig {
         return webViewBaseUrl;
     }
 
+    @NonNull
+    public IterableNetworkRetryPolicy getNetworkRetryPolicy() {
+        return networkRetryPolicy;
+    }
+
     private IterableConfig(Builder builder) {
         pushIntegrationName = builder.pushIntegrationName;
         urlHandler = builder.urlHandler;
@@ -374,11 +379,16 @@ public class IterableConfig {
          * Set the retry policy for failed API requests. Defaults to {@link IterableNetworkRetryPolicy#DEFAULT},
          * which is not enabled, so the SDK's existing request retry behaviour is unchanged. The policy only
          * takes effect once enabled. Not applied to requests yet.
-         * @param networkRetryPolicy policy to use
+         * @param networkRetryPolicy policy to use; {@code null} is treated as {@link IterableNetworkRetryPolicy#DEFAULT}
          */
         @NonNull
         public Builder setNetworkRetryPolicy(@NonNull IterableNetworkRetryPolicy networkRetryPolicy) {
-            this.networkRetryPolicy = networkRetryPolicy != null ? networkRetryPolicy : IterableNetworkRetryPolicy.DEFAULT;
+            if (networkRetryPolicy == null) {
+                IterableLogger.e(TAG, "setNetworkRetryPolicy received null, defaulting to IterableNetworkRetryPolicy.DEFAULT");
+                this.networkRetryPolicy = IterableNetworkRetryPolicy.DEFAULT;
+                return this;
+            }
+            this.networkRetryPolicy = networkRetryPolicy;
             return this;
         }
 

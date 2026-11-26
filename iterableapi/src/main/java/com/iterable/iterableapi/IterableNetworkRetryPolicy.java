@@ -3,12 +3,12 @@ package com.iterable.iterableapi;
 import androidx.annotation.NonNull;
 
 /**
- * Retry policy for API requests that fail with a server error (5xx) or without a response, which covers
- * any client-side failure including connection errors and timeouts.
+ * Retry policy for API requests that fail with a server error (5xx), a connection error or a timeout.
  * The policy only takes effect once enabled; when it is not enabled (the default), the SDK's existing
  * request retry behaviour is unchanged. The policy is not applied to requests yet.
  */
 public final class IterableNetworkRetryPolicy {
+    private static final String TAG = "IterableNetworkRetryPolicy";
 
     /**
      * Not enabled, so the SDK's existing request retry behaviour is unchanged. Once enabled: 5 attempts,
@@ -113,9 +113,17 @@ public final class IterableNetworkRetryPolicy {
             return this;
         }
 
+        /**
+         * @param backoffPolicy delay between retries; {@code null} is treated as the default 2 second interval
+         */
         @NonNull
         public Builder setBackoffPolicy(@NonNull BackoffPolicy backoffPolicy) {
-            this.backoffPolicy = backoffPolicy != null ? backoffPolicy : DEFAULT_BACKOFF_POLICY;
+            if (backoffPolicy == null) {
+                IterableLogger.e(TAG, "setBackoffPolicy received null, defaulting to a fixed 2 second interval");
+                this.backoffPolicy = DEFAULT_BACKOFF_POLICY;
+                return this;
+            }
+            this.backoffPolicy = backoffPolicy;
             return this;
         }
 

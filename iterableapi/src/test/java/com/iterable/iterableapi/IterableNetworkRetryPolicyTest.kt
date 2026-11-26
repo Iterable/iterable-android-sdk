@@ -1,5 +1,6 @@
 package com.iterable.iterableapi
 
+import android.util.Log
 import com.iterable.iterableapi.unit.TestRunner
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -7,6 +8,8 @@ import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.shadows.ShadowLog
+import java.lang.reflect.Modifier
 
 @RunWith(TestRunner::class)
 class IterableNetworkRetryPolicyTest {
@@ -56,6 +59,7 @@ class IterableNetworkRetryPolicyTest {
         val policy = IterableNetworkRetryPolicy.Builder().setBackoffPolicy(nullOf()).build()
 
         assertEquals(2_000L, policy.backoffPolicy.intervalMillis)
+        assertEquals(1, errorsFor("IterableNetworkRetryPolicy", "setBackoffPolicy received null"))
     }
 
     @Test
@@ -63,6 +67,17 @@ class IterableNetworkRetryPolicyTest {
         val policy = IterableConfig.Builder().setNetworkRetryPolicy(nullOf()).build().networkRetryPolicy
 
         assertSame(IterableNetworkRetryPolicy.DEFAULT, policy)
+        assertEquals(1, errorsFor("IterableConfig", "setNetworkRetryPolicy received null"))
+    }
+
+    @Test
+    fun publicGetterReturnsTheConfiguredPolicy() {
+        val custom = IterableNetworkRetryPolicy.Builder().setRetryEnabled(true).build()
+        val config = IterableConfig.Builder().setNetworkRetryPolicy(custom).build()
+
+        assertSame(custom, config.getNetworkRetryPolicy())
+        assertSame(IterableNetworkRetryPolicy.DEFAULT, IterableConfig.Builder().build().getNetworkRetryPolicy())
+        assertTrue(Modifier.isPublic(IterableConfig::class.java.getMethod("getNetworkRetryPolicy").modifiers))
     }
 
     @Test
@@ -90,6 +105,9 @@ class IterableNetworkRetryPolicyTest {
     fun negativeDeadlineIsRejected() {
         IterableNetworkRetryPolicy.Builder().setTotalDeadlineMillis(-1L)
     }
+
+    private fun errorsFor(tag: String, text: String) = ShadowLog.getLogsForTag(tag)
+        .count { it.type == Log.ERROR && it.msg.contains(text) }
 
     @Suppress("UNCHECKED_CAST")
     private fun <T> nullOf(): T = null as T

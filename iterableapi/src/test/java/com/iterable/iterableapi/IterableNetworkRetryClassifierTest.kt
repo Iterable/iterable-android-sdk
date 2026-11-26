@@ -39,7 +39,9 @@ class IterableNetworkRetryClassifierTest {
             400 to Outcome.TERMINAL,
             499 to Outcome.TERMINAL,
             500 to Outcome.RETRIABLE,
-            599 to Outcome.RETRIABLE
+            599 to Outcome.RETRIABLE,
+            600 to Outcome.TERMINAL,
+            999 to Outcome.TERMINAL
         )
         for ((code, outcome) in expected) {
             assertEquals("code $code", outcome, IterableNetworkRetryClassifier.classify(code, null))
@@ -129,6 +131,25 @@ class IterableNetworkRetryClassifierTest {
         )
         assertFalse(classifier.shouldRetry(Outcome.RETRIABLE, 1, start, start))
         assertFalse(classifier.shouldRetry(Outcome.RETRIABLE, 1, start, start + 1L))
+    }
+
+    @Test
+    fun clockGoingBackwardsStopsRetrying() {
+        val classifier = IterableNetworkRetryClassifier(enabledPolicy())
+        assertFalse(classifier.shouldRetry(Outcome.RETRIABLE, 1, start, start - 1L))
+    }
+
+    @Test
+    fun overflowingElapsedTimeStopsRetrying() {
+        val classifier = IterableNetworkRetryClassifier(enabledPolicy())
+        assertFalse(classifier.shouldRetry(Outcome.RETRIABLE, 1, Long.MIN_VALUE, Long.MAX_VALUE))
+    }
+
+    @Test
+    fun attemptBelowOneNeverRetries() {
+        val classifier = IterableNetworkRetryClassifier(enabledPolicy())
+        assertFalse(classifier.shouldRetry(Outcome.RETRIABLE, 0, start, start))
+        assertFalse(classifier.shouldRetry(Outcome.RETRIABLE, -1, start, start))
     }
 
     @Test
