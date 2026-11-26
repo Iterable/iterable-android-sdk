@@ -46,8 +46,7 @@ class IterableNetworkRetryClassifier {
         return classify(code, response.responseJson);
     }
 
-    // Expects the code as IterableRequestTask reports it: 0 for any client-side failure to get a response,
-    // including connection errors and timeouts.
+    // A 0 code is treated as a connection error or timeout; classify(IterableApiResponse) filters out other code-0 failures.
     @NonNull
     static Outcome classify(int responseCode, @Nullable JSONObject json) {
         if (responseCode >= 200 && responseCode < 300) {

@@ -47,6 +47,21 @@ class IterableNetworkRetryClassifierTest {
     }
 
     @Test
+    fun responseCodesFrom600AreTerminal() {
+        for (code in listOf(600, 999)) {
+            val response = IterableApiResponse.failure(code, null, null, "error $code")
+            assertEquals("code $code", Outcome.TERMINAL, IterableNetworkRetryClassifier.classify(response))
+        }
+    }
+
+    @Test
+    fun negativeResponseCodeIsTerminal() {
+        assertEquals(Outcome.TERMINAL, IterableNetworkRetryClassifier.classify(-1, null))
+        val response = IterableApiResponse.failure(-1, null, null, "error -1")
+        assertEquals(Outcome.TERMINAL, IterableNetworkRetryClassifier.classify(response))
+    }
+
+    @Test
     fun jwtBodiesReachTheAuthPathOnlyOn401() {
         for (code in listOf(
             IterableNetworkRetryClassifier.ERROR_CODE_INVALID_JWT_PAYLOAD,
