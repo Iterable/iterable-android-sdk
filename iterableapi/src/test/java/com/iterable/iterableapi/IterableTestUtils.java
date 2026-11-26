@@ -19,6 +19,7 @@ import java.util.Map;
 
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
+import okio.Buffer;
 
 import static org.mockito.Mockito.mock;
 
@@ -94,6 +95,26 @@ public class IterableTestUtils {
 
         // Use the new dedicated method for resetting background initialization state
         IterableBackgroundInitializer.resetBackgroundInitializationState();
+    }
+
+    public static String getImagePushPayload(String imageUrl) throws IOException, JSONException {
+        JSONObject payload = new JSONObject(getResourceString("push_payload_image_push.json"));
+        payload.put(IterableConstants.ITERABLE_DATA_PUSH_IMAGE, imageUrl);
+        return payload.toString();
+    }
+
+    public static MockResponse getImageResponse() throws IOException {
+        Buffer body = new Buffer();
+        body.readFrom(IterableTestUtils.class.getClassLoader().getResourceAsStream("350x150.png"));
+        return new MockResponse().setBody(body);
+    }
+
+    public static String getUnreachableUrl() throws IOException {
+        MockWebServer server = new MockWebServer();
+        server.start();
+        String url = server.url("/image.png").toString();
+        server.shutdown();
+        return url;
     }
 
     public static String getResourceString(String fileName) throws IOException {

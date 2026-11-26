@@ -22,6 +22,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
 import java.net.URL;
 
 import static android.os.Looper.getMainLooper;
@@ -34,7 +35,9 @@ import static junit.framework.Assert.assertTrue;
 
 import static org.robolectric.Shadows.shadowOf;
 
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import org.json.JSONArray;
@@ -131,6 +134,28 @@ public class IterableNotificationTest {
             Notification notification = mNotificationManager.getActiveNotifications()[0].getNotification();
             assertTrue(notification.extras.containsKey(Notification.EXTRA_PICTURE));
         }
+    }
+
+    @Test
+    public void testImageDownloadTimesOutAfter15SecondsByDefault() throws Exception {
+        Bundle notif = new Bundle();
+        notif.putString(IterableConstants.ITERABLE_DATA_KEY, itbl1);
+        notif.putString(IterableConstants.ITERABLE_DATA_BODY, body);
+
+        IterableNotificationBuilder iterableNotification = IterableNotificationHelper.createNotification(getContext(), notif);
+
+        assertEquals(15_000, IterableNotificationBuilder.IMAGE_DOWNLOAD_TIMEOUT_MILLIS);
+        assertEquals(IterableNotificationBuilder.IMAGE_DOWNLOAD_TIMEOUT_MILLIS, iterableNotification.imageTimeoutMillis);
+    }
+
+    @Test
+    public void testImageTimeoutsApplyToConnectAndRead() {
+        HttpURLConnection connection = mock(HttpURLConnection.class);
+
+        IterableNotificationBuilder.applyImageTimeouts(connection, 1234);
+
+        verify(connection).setConnectTimeout(1234);
+        verify(connection).setReadTimeout(1234);
     }
 
     @Test

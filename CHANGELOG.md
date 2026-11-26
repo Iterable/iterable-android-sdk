@@ -5,7 +5,12 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 ### Fixed
+- On Android 12 (API 31) and later, if the image of a push notification fails to download, the SDK now tries the download once more when a network is available, and adds the image to the notification that is already showing ([#1109](https://github.com/Iterable/iterable-android-sdk/issues/1109)). This covers cases like Android blocking the app's network while the app is in the `rare` App Standby bucket. The notification is still shown right away without the image, as before, and adding the image doesn't make a second sound or vibration. The retry is skipped if the notification was dismissed, is more than 24 hours old, or the push has no message ID. On every Android version, the image download now gives up after 15 seconds without connecting or without receiving data, so a stalled download no longer holds back the notification. Thanks to [@konrad-journi](https://github.com/konrad-journi) for the report.
 - `IterableInAppManager.showMessage` is now safe to call from any thread. Called off the main thread, it posts the display to the main thread instead of running it on the caller thread. Since 3.9.0, a host activity that is not a `FragmentActivity` (for example a Jetpack Compose `ComponentActivity`) uses the Dialog renderer, which crashed with `IllegalStateException: Method addObserver must be called on the main thread` when `showMessage` was called from a background thread, including the React Native bridge thread. Calls from the main thread still display synchronously. Called from another thread, the message's read and consumed state are updated after `showMessage` returns. Like iOS, display always happens on the main thread.
+
+## [3.11.1]
+
+### Fixed
 - Push token registration, disable operations, Iterable deep-link redirects, and API requests now use dedicated SDK-owned executors instead of Android's process-wide `AsyncTask` queues. Push and deep-link work retain isolated serial lanes. Ordinary online API requests remain concurrent, while their automatic retries and offline immediate requests retain serial ordering; stored offline requests retain their own FIFO flow. Slow work in one flow no longer delays unrelated SDK operations, and client callbacks and attribution updates continue on the main thread.
 
 ## [3.11.0]
