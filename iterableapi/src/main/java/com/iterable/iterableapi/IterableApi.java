@@ -108,7 +108,8 @@ public class IterableApi {
             IterableLogger.e(TAG, "Remote configuration has no valid offlineMode, keeping the saved value");
         }
 
-        // Matching iOS, a missing or null autoRetry means disabled and a non-boolean one keeps the saved value.
+        // Like iOS, a missing or null autoRetry means disabled and a non-boolean one keeps the saved value.
+        // Unlike iOS, which ignores the whole response if `offlineMode` is missing or either field has the wrong type, each field applies on its own.
         Object autoRetryRemote = jsonData.isNull(IterableConstants.KEY_AUTO_RETRY) ? Boolean.FALSE : jsonData.opt(IterableConstants.KEY_AUTO_RETRY);
         if (autoRetryRemote instanceof Boolean) {
             editor.putBoolean(IterableConstants.SHARED_PREFS_AUTO_RETRY_KEY, (Boolean) autoRetryRemote);
@@ -978,10 +979,6 @@ public class IterableApi {
     IterableApi(IterableInAppManager inAppManager) {
         this();
         this.inAppManager = inAppManager;
-    }
-    IterableApi(IterableApiClient apiClient, IterableInAppManager inAppManager) {
-        this(inAppManager);
-        this.apiClient = apiClient;
     }
     IterableApi(IterableInAppManager inAppManager, IterableEmbeddedManager embeddedManager,
                 IterablePushRegistration pushRegistration) {

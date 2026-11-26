@@ -929,9 +929,15 @@ public class IterableApiTest extends BaseTest {
                 .getBoolean(IterableConstants.SHARED_PREFS_AUTO_RETRY_KEY, false);
     }
 
+    private boolean storedOfflineMode() {
+        return getContext().getSharedPreferences(IterableConstants.SHARED_PREFS_SAVED_CONFIGURATION, Context.MODE_PRIVATE)
+                .getBoolean(IterableConstants.SHARED_PREFS_OFFLINE_MODE_KEY, false);
+    }
+
+    // Intended difference from iOS, which ignores the whole response when a field is missing.
     @Test
     public void testRemoteConfigurationWithoutOfflineModeStillAppliesAutoRetry() throws Exception {
-        initWithStoredRemoteConfig(false, false);
+        initWithStoredRemoteConfig(true, false);
 
         fetchRemoteConfiguration(new MockResponse().setResponseCode(200)
                 .setBody("{\"" + IterableConstants.KEY_AUTO_RETRY + "\": true}"));
@@ -939,12 +945,13 @@ public class IterableApiTest extends BaseTest {
         assertTrue(IterableApi.getInstance().isAutoRetryOnJwtFailure());
         assertTrue(IterableApi.getInstance().remoteRetryConfig.isAutoRetryEnabled());
         assertTrue(storedAutoRetry());
+        assertTrue(storedOfflineMode());
         verify(mockApiClient, never()).setOfflineProcessingEnabled(anyBoolean());
     }
 
     @Test
     public void testRemoteConfigurationWithoutAutoRetryDisablesAutoRetry() throws Exception {
-        initWithStoredRemoteConfig(false, true);
+        initWithStoredRemoteConfig(true, true);
         assertTrue(IterableApi.getInstance().isAutoRetryOnJwtFailure());
 
         fetchRemoteConfiguration(new MockResponse().setResponseCode(200)
@@ -953,9 +960,11 @@ public class IterableApiTest extends BaseTest {
         assertFalse(IterableApi.getInstance().isAutoRetryOnJwtFailure());
         assertFalse(IterableApi.getInstance().remoteRetryConfig.isAutoRetryEnabled());
         assertFalse(storedAutoRetry());
+        assertFalse(storedOfflineMode());
         verify(mockApiClient).setOfflineProcessingEnabled(false);
     }
 
+    // Intended difference from iOS, which ignores the whole response when a field has the wrong type.
     @Test
     public void testRemoteConfigurationWithWrongTypeAutoRetryKeepsStoredTrue() throws Exception {
         initWithStoredRemoteConfig(false, true);
@@ -997,16 +1006,17 @@ public class IterableApiTest extends BaseTest {
 
     @Test
     public void testFailedRemoteConfigurationFetchKeepsStoredAutoRetry() throws Exception {
-        initWithStoredRemoteConfig(false, true);
+        initWithStoredRemoteConfig(true, true);
 
         fetchRemoteConfiguration(new MockResponse().setResponseCode(401)
                 .setBody("{\"code\": \"BadApiKey\", \"msg\": \"Invalid API key\", \""
-                        + IterableConstants.KEY_OFFLINE_MODE + "\": true, \""
+                        + IterableConstants.KEY_OFFLINE_MODE + "\": false, \""
                         + IterableConstants.KEY_AUTO_RETRY + "\": false}"));
 
         assertTrue(IterableApi.getInstance().isAutoRetryOnJwtFailure());
         assertTrue(IterableApi.getInstance().remoteRetryConfig.isAutoRetryEnabled());
         assertTrue(storedAutoRetry());
+        assertTrue(storedOfflineMode());
         verify(mockApiClient, never()).setOfflineProcessingEnabled(anyBoolean());
     }
 
