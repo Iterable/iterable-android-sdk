@@ -249,6 +249,12 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
         showMessage(message, true, null);
     }
 
+    /**
+     * Display the in-app message on the screen. Safe to call from any thread; the message is always
+     * displayed on the main thread.
+     * @param message In-App message object retrieved from {@link IterableInAppManager#getMessages()}
+     * @param location Where the message is displayed from. The message is consumed only for {@link IterableInAppLocation#IN_APP}
+     */
     public void showMessage(@NonNull IterableInAppMessage message, @NonNull IterableInAppLocation location) {
         showMessage(message, location == IterableInAppLocation.IN_APP, null, location);
     }
@@ -266,15 +272,15 @@ public class IterableInAppManager implements IterableActivityMonitor.AppStateCal
     }
 
     /**
- * Displays an in-app message on the main thread.
- *
- * <p><b>Threading:</b> Main-thread calls are synchronous. Other calls are queued, so the
- * message's read/consumed state changes after this method returns. The callback runs on main.
- *
- * @param message message to display
- * @param consume whether to consume the message after display
- * @param clickCallback callback for clicked links, or {@code null}
- * @param inAppLocation where the message is displayed from
+     * Displays an in-app message on the main thread.
+     *
+     * <p><b>Threading:</b> Main-thread calls are synchronous. Other calls are queued, so the
+     * message's read/consumed state changes after this method returns. The callback runs on main.
+     *
+     * @param message message to display
+     * @param consume whether to consume the message after display
+     * @param clickCallback callback for clicked links, or {@code null}
+     * @param inAppLocation where the message is displayed from
      */
     public void showMessage(final @NonNull IterableInAppMessage message, final boolean consume, final @Nullable IterableHelper.IterableUrlCallback clickCallback, final @NonNull IterableInAppLocation inAppLocation) {
         // Displaying creates dialogs and registers lifecycle observers, which must happen on the main thread.
