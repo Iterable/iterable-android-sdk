@@ -68,7 +68,8 @@ public final class IterableNetworkRetryPolicy {
             IterableLogger.w(TAG, name + " of " + seconds + "s exceeds the maximum, clamping to " + MAX_SECONDS + "s");
             return Math.round(MAX_SECONDS * 1000d);
         }
-        return Math.round(seconds * 1000d);
+        // 0 ms means no deadline, so a positive value must not round down to it.
+        return seconds > 0 ? Math.max(1L, Math.round(seconds * 1000d)) : 0L;
     }
 
     /**

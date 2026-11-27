@@ -72,6 +72,34 @@ class IterableNetworkRetryPolicyTest {
     }
 
     @Test
+    fun secondsAreRoundedToTheNearestMillisecond() {
+        val policy = IterableNetworkRetryPolicy.Builder()
+            .setBackoffPolicy(IterableNetworkRetryPolicy.BackoffPolicy.fixed(1.001))
+            .setTotalDeadline(1.001)
+            .build()
+
+        assertEquals(1_001L, policy.backoffPolicy.intervalMillis)
+        assertEquals(1_001L, policy.totalDeadlineMillis)
+    }
+
+    @Test
+    fun positiveSecondsNeverRoundDownToZero() {
+        val tiny = IterableNetworkRetryPolicy.Builder()
+            .setBackoffPolicy(IterableNetworkRetryPolicy.BackoffPolicy.fixed(0.0004))
+            .setTotalDeadline(0.0004)
+            .build()
+        val zero = IterableNetworkRetryPolicy.Builder()
+            .setBackoffPolicy(IterableNetworkRetryPolicy.BackoffPolicy.fixed(0.0))
+            .setTotalDeadline(0.0)
+            .build()
+
+        assertEquals(1L, tiny.backoffPolicy.intervalMillis)
+        assertEquals(1L, tiny.totalDeadlineMillis)
+        assertEquals(0L, zero.backoffPolicy.intervalMillis)
+        assertEquals(0L, zero.totalDeadlineMillis)
+    }
+
+    @Test
     fun hugeSecondsAreClampedToTenYears() {
         val policy = IterableNetworkRetryPolicy.Builder()
             .setBackoffPolicy(IterableNetworkRetryPolicy.BackoffPolicy.fixed(Double.MAX_VALUE))

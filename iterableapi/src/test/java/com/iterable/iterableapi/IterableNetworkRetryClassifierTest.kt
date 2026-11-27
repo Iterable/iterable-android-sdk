@@ -122,7 +122,7 @@ class IterableNetworkRetryClassifierTest {
     }
 
     @Test
-    fun hugeDelayDoesNotOverflowTheDeadlineCheck() {
+    fun delayLongerThanTheDeadlineNeverRetries() {
         val classifier = IterableNetworkRetryClassifier(
             IterableNetworkRetryPolicy.Builder()
                 .setRetryEnabled(true)
