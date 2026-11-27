@@ -1071,6 +1071,7 @@ public class IterableApiTest extends BaseTest {
                 .putBoolean(IterableConstants.SHARED_PREFS_AUTO_RETRY_KEY, true)
                 .commit();
         IterableRequestDispatcher dispatcher = mock(IterableRequestDispatcher.class);
+        // A fresh, uninitialized instance, like a cold start where the push open arrives before initialize.
         IterableApi.sharedInstance = new IterableApi(mock(IterableInAppManager.class),
                 mock(IterableEmbeddedManager.class), new IterablePushRegistration(pushRegistrationExecutor));
         IterableApi.sharedInstance.setRequestDispatcher(dispatcher);
@@ -1088,6 +1089,7 @@ public class IterableApiTest extends BaseTest {
             clearInvocations(dispatcher);
 
             IterableNetworkRetryPolicy policy = new IterableNetworkRetryPolicy.Builder().setRetryEnabled(true).build();
+            // The late init sends the pending push open, so the saved autoRetry has to be loaded before it.
             IterableApi.initialize(getContext(), "apiKey", new IterableConfig.Builder()
                     .setAutoPushRegistration(false)
                     .setNetworkRetryPolicy(policy)
@@ -1111,20 +1113,15 @@ public class IterableApiTest extends BaseTest {
 
     // Request tests replace the client via setRequestDispatcher, so this checks the constructor's wiring too.
     @Test
-    public void testApiClientSharesRemoteRetryConfigWithApi() {
-        IterableApi api = new IterableApi();
-        assertSame(api.remoteRetryConfig, api.apiClient.getRemoteRetryConfig());
-
-        api.setRequestDispatcher(mock(IterableRequestDispatcher.class));
-        assertSame(api.remoteRetryConfig, api.apiClient.getRemoteRetryConfig());
-    }
-
-    @Test
-    public void testApiClientReadsNetworkRetryPolicyFromConfig() {
+    public void testApiClientSharesRetryConfigAndPolicyWithApi() {
         IterableApi api = new IterableApi();
         IterableNetworkRetryPolicy policy = new IterableNetworkRetryPolicy.Builder().setRetryEnabled(true).build();
         api.config = new IterableConfig.Builder().setNetworkRetryPolicy(policy).build();
+        assertSame(api.remoteRetryConfig, api.apiClient.getRemoteRetryConfig());
+        assertSame(policy, api.apiClient.getNetworkRetryPolicy());
 
+        api.setRequestDispatcher(mock(IterableRequestDispatcher.class));
+        assertSame(api.remoteRetryConfig, api.apiClient.getRemoteRetryConfig());
         assertSame(policy, api.apiClient.getNetworkRetryPolicy());
     }
 
