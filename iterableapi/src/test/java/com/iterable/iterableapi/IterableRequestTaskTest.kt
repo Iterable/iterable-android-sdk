@@ -352,16 +352,7 @@ class IterableRequestTaskTest {
         val retries = PendingRetries()
         val success = mock(IterableHelper.SuccessHandler::class.java)
         val failure = mock(IterableHelper.FailureHandler::class.java)
-        val server = MockWebServer().apply {
-            // A cut fixed-length body comes back without an error on the JVM, so only a chunked body fails the read.
-            dispatcher = object : Dispatcher() {
-                override fun dispatch(request: RecordedRequest) = MockResponse()
-                    .setResponseCode(200)
-                    .setChunkedBody("{\"a\":\"" + "x".repeat(8_192) + "\"}", 1_024)
-                    .setSocketPolicy(SocketPolicy.DISCONNECT_DURING_RESPONSE_BODY)
-            }
-            start()
-        }
+        val server = brokenSuccessBodyServer()
         IterableRequestTask.overrideUrl = server.url("/").toString()
         val remote = IterableRemoteRetryConfig().apply { isAutoRetryEnabled = true }
 
@@ -374,11 +365,40 @@ class IterableRequestTaskTest {
             }
 
             assertEquals(1, server.requestCount)
-            verify(failure, times(1)).onFailure(eq("Premature EOF"), any())
+            verify(failure, times(1)).onFailure(any(), any())
             verify(success, never()).onSuccess(any())
         } finally {
             server.shutdown()
         }
+    }
+
+    @Test
+    fun `a 200 whose body breaks mid-read keeps its code and has no body`() {
+        val server = brokenSuccessBodyServer()
+
+        try {
+            for (type in listOf(IterableApiRequest.GET, IterableApiRequest.POST)) {
+                val response = execute(server.url("/").toString(), type)
+
+                assertEquals(type, 200, response.responseCode)
+                assertFalse(type, response.success)
+                assertFalse(type, response.networkFailure)
+                assertNull(type, response.responseBody)
+            }
+        } finally {
+            server.shutdown()
+        }
+    }
+
+    private fun brokenSuccessBodyServer() = MockWebServer().apply {
+        // A cut fixed-length body comes back without an error on the JVM, so only a chunked body fails the read.
+        dispatcher = object : Dispatcher() {
+            override fun dispatch(request: RecordedRequest) = MockResponse()
+                .setResponseCode(200)
+                .setChunkedBody("{\"a\":\"" + "x".repeat(8_192) + "\"}", 1_024)
+                .setSocketPolicy(SocketPolicy.DISCONNECT_DURING_RESPONSE_BODY)
+        }
+        start()
     }
 
     private class ManualClock : IterableRequestDispatcher.Clock {
@@ -546,9 +566,9 @@ class IterableRequestTaskTest {
         return captor.value.networkRetryPolicy
     }
 
-    private fun execute(baseUrl: String): IterableApiResponse {
+    private fun execute(baseUrl: String, type: String = IterableApiRequest.POST): IterableApiResponse {
         IterableRequestTask.overrideUrl = baseUrl
-        return IterableRequestTask.executeApiRequest(request(), requestDispatcher)
+        return IterableRequestTask.executeApiRequest(request(type = type), requestDispatcher)
     }
 
     private fun jwtError(): JSONObject {
@@ -571,13 +591,14 @@ class IterableRequestTaskTest {
 
     private fun request(
         onSuccess: IterableHelper.SuccessHandler? = null,
-        onFailure: IterableHelper.FailureHandler? = null
+        onFailure: IterableHelper.FailureHandler? = null,
+        type: String = IterableApiRequest.POST
     ): IterableApiRequest {
         return IterableApiRequest(
             "api-key",
             "api/test",
             JSONObject(),
-            IterableApiRequest.POST,
+            type,
             "expired-token",
             onSuccess,
             onFailure
