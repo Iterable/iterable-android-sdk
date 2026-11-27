@@ -208,13 +208,6 @@ public class IterableApi {
     }
 
     /**
-     * Returns whether auto-retry on JWT failure is enabled, as determined by remote configuration.
-     */
-    boolean isAutoRetryOnJwtFailure() {
-        return remoteRetryConfig.isAutoRetryEnabled();
-    }
-
-    /**
      * Set the notification icon with the given iconName.
      * @param context
      * @param iconName
