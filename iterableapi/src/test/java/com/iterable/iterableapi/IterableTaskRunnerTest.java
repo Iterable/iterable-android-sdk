@@ -11,7 +11,9 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.robolectric.util.ReflectionHelpers;
 
+import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
 import okhttp3.mockwebserver.MockResponse;
@@ -45,6 +47,7 @@ public class IterableTaskRunnerTest extends BaseTest {
     private HealthMonitor mockHealthMonitor;
     private IterableNetworkConnectivityManager mockNetworkConnectivityManager;
     private IterableRequestDispatcher requestDispatcher;
+    private final IterableRemoteRetryConfig remoteRetryConfig = new IterableRemoteRetryConfig();
     private MockWebServer server;
 
     @Before
@@ -65,7 +68,8 @@ public class IterableTaskRunnerTest extends BaseTest {
                 mockNetworkConnectivityManager,
                 mockHealthMonitor,
                 new ApiEndpointClassification(),
-                requestDispatcher
+                requestDispatcher,
+                remoteRetryConfig
         );
         server = new MockWebServer();
         IterableApi.overrideURLEndpointPath(server.url("").toString());
@@ -258,12 +262,15 @@ public class IterableTaskRunnerTest extends BaseTest {
                 .setAuthHandler(mockAuthHandler)
                 .build();
         IterableApi.initialize(context, IterableTestUtils.apiKey, config);
+        remoteRetryConfig.setAutoRetryEnabled(autoRetryEnabled);
         return mockAuthHandler;
     }
 
     @Test
-    public void testAutoRetryEnabled_JwtFailure_TaskRetainedInDB() throws Exception {
+    public void testAutoRetryEnabled_JwtFailure_TaskRetainedInDBAndNotResentInline() throws Exception {
         initApiWithAutoRetry(true);
+        ImmediateRefreshAuthManager authManager = new ImmediateRefreshAuthManager(IterableApi.getInstance());
+        ReflectionHelpers.setField(IterableApi.getInstance(), "authManager", authManager);
 
         IterableApiRequest request = new IterableApiRequest("apiKey", "api/test", new JSONObject(), "POST", "expired_token", null, null);
         IterableTask task = new IterableTask("testTask", IterableTaskType.API, request.toJSONObject().toString());
@@ -275,6 +282,7 @@ public class IterableTaskRunnerTest extends BaseTest {
         server.enqueue(new MockResponse()
                 .setResponseCode(401)
                 .setBody(createJwt401ResponseBody()));
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
 
         IterableTaskRunner.TaskCompletedListener taskCompletedListener = mock(IterableTaskRunner.TaskCompletedListener.class);
         taskRunner.addTaskCompletedListener(taskCompletedListener);
@@ -291,11 +299,15 @@ public class IterableTaskRunnerTest extends BaseTest {
         verify(taskCompletedListener).onTaskCompleted(any(String.class), eq(IterableTaskRunner.TaskResult.RETRY), any(IterableApiResponse.class));
 
         assertEquals(IterableAuthManager.AuthState.INVALID, IterableApi.getInstance().getAuthManager().getAuthState());
+        assertEquals("The kept task is replayed later, so an inline re-send would duplicate it", 1, server.getRequestCount());
+        assertEquals(Collections.singletonList(IterableAuthRefreshReason.JWT_401), authManager.refreshReasons);
     }
 
     @Test
-    public void testAutoRetryDisabled_JwtFailure_TaskDeletedFromDB() throws Exception {
+    public void testAutoRetryDisabled_JwtFailure_TaskDeletedFromDBAndResentInline() throws Exception {
         initApiWithAutoRetry(false);
+        ReflectionHelpers.setField(IterableApi.getInstance(), "authManager",
+                new ImmediateRefreshAuthManager(IterableApi.getInstance()));
 
         IterableApiRequest request = new IterableApiRequest("apiKey", "api/test", new JSONObject(), "POST", "expired_token", null, null);
         IterableTask task = new IterableTask("testTask", IterableTaskType.API, request.toJSONObject().toString());
@@ -307,6 +319,7 @@ public class IterableTaskRunnerTest extends BaseTest {
         server.enqueue(new MockResponse()
                 .setResponseCode(401)
                 .setBody(createJwt401ResponseBody()));
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
 
         taskRunner.onTaskCreated(null);
         runHandlerTasks(taskRunner);
@@ -316,6 +329,10 @@ public class IterableTaskRunnerTest extends BaseTest {
 
         shadowOf(getMainLooper()).idle();
         verify(mockTaskStorage).deleteTask(any(String.class));
+        RecordedRequest resend = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull("With autoRetry off a JWT 401 is re-sent inline, as on master", resend);
+        assertEquals(IterableConstants.HEADER_SDK_AUTH_FORMAT + ImmediateRefreshAuthManager.FRESH_TOKEN,
+                resend.getHeader(IterableConstants.HEADER_SDK_AUTHORIZATION));
     }
 
     @Test
@@ -573,7 +590,8 @@ public class IterableTaskRunnerTest extends BaseTest {
                 mockNetworkConnectivityManager,
                 mockHealthMonitor,
                 classification,
-                requestDispatcher
+                requestDispatcher,
+                remoteRetryConfig
         );
 
         IterableApiRequest request = new IterableApiRequest("apiKey", IterableConstants.ENDPOINT_DISABLE_DEVICE, new JSONObject(), "POST", null, null, null);
@@ -605,7 +623,8 @@ public class IterableTaskRunnerTest extends BaseTest {
                 mockNetworkConnectivityManager,
                 mockHealthMonitor,
                 classification,
-                requestDispatcher
+                requestDispatcher,
+                remoteRetryConfig
         );
 
         when(mockTaskStorage.getNextScheduledTaskNotRequiringJwt(classification)).thenReturn(null);
@@ -631,7 +650,8 @@ public class IterableTaskRunnerTest extends BaseTest {
                 mockNetworkConnectivityManager,
                 mockHealthMonitor,
                 classification,
-                requestDispatcher
+                requestDispatcher,
+                remoteRetryConfig
         );
 
         IterableApiRequest trackRequestA = new IterableApiRequest("apiKey", IterableConstants.ENDPOINT_TRACK, new JSONObject("{\"eventName\":\"A\"}"), "POST", null, null, null);
@@ -679,7 +699,8 @@ public class IterableTaskRunnerTest extends BaseTest {
                 mockNetworkConnectivityManager,
                 mockHealthMonitor,
                 classification,
-                requestDispatcher
+                requestDispatcher,
+                remoteRetryConfig
         );
 
         IterableApiRequest trackRequest = new IterableApiRequest("apiKey", IterableConstants.ENDPOINT_TRACK, new JSONObject(), "POST", null, null, null);

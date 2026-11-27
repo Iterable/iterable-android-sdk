@@ -46,7 +46,8 @@ class IterableApiClientRequestRoutingTest : BaseTest() {
                 dispatcher(offlineImmediateExecutor),
                 dispatcher(offlineStoredExecutor)
             ),
-            IterableRemoteRetryConfig()
+            IterableRemoteRetryConfig(),
+            { IterableNetworkRetryPolicy.DEFAULT }
         )
     }
 

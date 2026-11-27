@@ -23,6 +23,7 @@ class IterableApiClient {
     private final @NonNull AuthProvider authProvider;
     private final @NonNull IterableRequestDispatchers requestDispatchers;
     private final @NonNull IterableRemoteRetryConfig remoteRetryConfig;
+    private final @NonNull NetworkRetryPolicyProvider networkRetryPolicyProvider;
     private final OnlineRequestProcessor pushRegistrationRequestProcessor;
     // A newer push action invalidates retries from earlier registration or disable requests.
     private final AtomicLong pushRegistrationRequestGeneration = new AtomicLong();
@@ -47,16 +48,26 @@ class IterableApiClient {
         void resetAuth();
     }
 
+    interface NetworkRetryPolicyProvider {
+        @NonNull
+        IterableNetworkRetryPolicy getNetworkRetryPolicy();
+    }
+
     IterableApiClient(
             @NonNull AuthProvider authProvider,
             @NonNull IterableRequestDispatchers requestDispatchers,
-            @NonNull IterableRemoteRetryConfig remoteRetryConfig
+            @NonNull IterableRemoteRetryConfig remoteRetryConfig,
+            @NonNull NetworkRetryPolicyProvider networkRetryPolicyProvider
     ) {
         this.authProvider = authProvider;
         this.requestDispatchers = requestDispatchers;
         this.remoteRetryConfig = remoteRetryConfig;
-        pushRegistrationRequestProcessor =
-                new OnlineRequestProcessor(requestDispatchers.push());
+        this.networkRetryPolicyProvider = networkRetryPolicyProvider;
+        pushRegistrationRequestProcessor = newOnlineRequestProcessor(requestDispatchers.push());
+    }
+
+    private OnlineRequestProcessor newOnlineRequestProcessor(IterableRequestDispatcher dispatcher) {
+        return new OnlineRequestProcessor(dispatcher, networkRetryPolicyProvider, remoteRetryConfig);
     }
 
     @NonNull
@@ -66,7 +77,7 @@ class IterableApiClient {
 
     private synchronized RequestProcessor getRequestProcessor() {
         if (requestProcessor == null) {
-            requestProcessor = new OnlineRequestProcessor(requestDispatchers.online());
+            requestProcessor = newOnlineRequestProcessor(requestDispatchers.online());
         }
         return requestProcessor;
     }
@@ -76,7 +87,7 @@ class IterableApiClient {
                 && offlineRequestProcessor == null
                 && !hasPendingOfflineRequests()) {
             if (!(requestProcessor instanceof OnlineRequestProcessor)) {
-                requestProcessor = new OnlineRequestProcessor(requestDispatchers.online());
+                requestProcessor = newOnlineRequestProcessor(requestDispatchers.online());
             }
             return;
         }
@@ -89,7 +100,7 @@ class IterableApiClient {
         if (offlineMode) {
             requestProcessor = persistentOfflineRequestProcessor;
         } else if (!(requestProcessor instanceof OnlineRequestProcessor)) {
-            requestProcessor = new OnlineRequestProcessor(requestDispatchers.online());
+            requestProcessor = newOnlineRequestProcessor(requestDispatchers.online());
         }
     }
 
@@ -98,7 +109,9 @@ class IterableApiClient {
             offlineRequestProcessor = new OfflineRequestProcessor(
                         authProvider.getContext(),
                         requestDispatchers.offlineImmediate(),
-                        requestDispatchers.offlineStored()
+                        requestDispatchers.offlineStored(),
+                        remoteRetryConfig,
+                        networkRetryPolicyProvider
             );
         }
         return offlineRequestProcessor;

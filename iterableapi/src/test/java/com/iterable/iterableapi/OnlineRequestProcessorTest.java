@@ -19,7 +19,11 @@ public class OnlineRequestProcessorTest extends BaseTest {
                 (runnable, delayMs) -> {
                 }
         );
-        OnlineRequestProcessor processor = new OnlineRequestProcessor(dispatcher);
+        OnlineRequestProcessor processor = new OnlineRequestProcessor(
+                dispatcher,
+                () -> IterableNetworkRetryPolicy.DEFAULT,
+                new IterableRemoteRetryConfig()
+        );
         JSONObject requestJson = new JSONObject()
                 .put(IterableConstants.KEY_CREATED_AT, "not-a-timestamp");
 

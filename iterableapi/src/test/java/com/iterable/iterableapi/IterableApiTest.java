@@ -1056,29 +1056,8 @@ public class IterableApiTest extends BaseTest {
 
     private static MockResponse jwtErrorResponse() {
         return new MockResponse().setResponseCode(401)
-                .setBody("{\"code\": \"" + IterableRequestTask.ERROR_CODE_INVALID_JWT_PAYLOAD
+                .setBody("{\"code\": \"" + IterableNetworkRetryClassifier.ERROR_CODE_INVALID_JWT_PAYLOAD
                         + "\", \"msg\": \"JWT token is expired\"}");
-    }
-
-    private static class ImmediateRefreshAuthManager extends IterableAuthManager {
-        static final String FRESH_TOKEN = "fresh-token";
-
-        ImmediateRefreshAuthManager(IterableApi api) {
-            super(api, null, new RetryPolicy(1, 0, RetryPolicy.Type.LINEAR), 60_000);
-        }
-
-        @Override
-        synchronized void scheduleAuthTokenRefresh(
-                long timeDuration,
-                IterableAuthRefreshReason reason,
-                IterableHelper.SuccessHandler successCallback
-        ) {
-            try {
-                successCallback.onSuccess(new JSONObject().put("newAuthToken", FRESH_TOKEN));
-            } catch (JSONException e) {
-                throw new AssertionError(e);
-            }
-        }
     }
 
     // Request tests replace the client via setRequestDispatcher, so this checks the constructor's wiring too.
@@ -1089,6 +1068,29 @@ public class IterableApiTest extends BaseTest {
 
         api.setRequestDispatcher(mock(IterableRequestDispatcher.class));
         assertSame(api.remoteRetryConfig, api.apiClient.getRemoteRetryConfig());
+    }
+
+    // A fresh holder anywhere here silently turns remote autoRetry off for stored requests.
+    @Test
+    public void testRemoteRetryConfigReachesTheOfflineProcessorAndTaskRunner() {
+        IterableNetworkRetryPolicy policy = new IterableNetworkRetryPolicy.Builder().setRetryEnabled(true).build();
+        IterableApi.initialize(getContext(), "apiKey", new IterableConfig.Builder()
+                .setAutoPushRegistration(false).setNetworkRetryPolicy(policy).build());
+        IterableApi api = IterableApi.getInstance();
+        api.apiClient.setOfflineProcessingEnabled(true);
+
+        OfflineRequestProcessor processor = ReflectionHelpers.getField(api.apiClient, "offlineRequestProcessor");
+        try {
+            IterableTaskRunner taskRunner = ReflectionHelpers.getField(processor, "taskRunner");
+            assertSame(api.remoteRetryConfig, ReflectionHelpers.getField(processor, "remoteRetryConfig"));
+            assertSame(api.remoteRetryConfig, ReflectionHelpers.getField(taskRunner, "remoteRetryConfig"));
+            IterableApiClient.NetworkRetryPolicyProvider policyProvider =
+                    ReflectionHelpers.getField(processor, "networkRetryPolicyProvider");
+            assertSame("offline processor should use the config's network retry policy",
+                    policy, policyProvider.getNetworkRetryPolicy());
+        } finally {
+            processor.dispose();
+        }
     }
 
     //region Consent Logging Tests - Direct Unit Tests

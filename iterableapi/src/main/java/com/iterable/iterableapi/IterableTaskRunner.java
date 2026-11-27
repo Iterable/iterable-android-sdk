@@ -22,6 +22,7 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
     private HealthMonitor healthMonitor;
     private ApiEndpointClassification classification;
     private final IterableRequestDispatcher requestDispatcher;
+    private final IterableRemoteRetryConfig remoteRetryConfig;
 
     private static final int RETRY_INTERVAL_SECONDS = 60;
 
@@ -51,13 +52,15 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
                        IterableNetworkConnectivityManager networkConnectivityManager,
                        HealthMonitor healthMonitor,
                        ApiEndpointClassification classification,
-                       IterableRequestDispatcher requestDispatcher) {
+                       IterableRequestDispatcher requestDispatcher,
+                       IterableRemoteRetryConfig remoteRetryConfig) {
         this.taskStorage = taskStorage;
         this.activityMonitor = activityMonitor;
         this.networkConnectivityManager = networkConnectivityManager;
         this.healthMonitor = healthMonitor;
         this.classification = classification;
         this.requestDispatcher = requestDispatcher;
+        this.remoteRetryConfig = remoteRetryConfig;
         networkThread.start();
         handler = new Handler(networkThread.getLooper(), this);
         taskStorage.addTaskCreatedListener(this);
@@ -165,7 +168,7 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
             return;
         }
 
-        boolean autoRetry = IterableApi.getInstance().isAutoRetryOnJwtFailure();
+        boolean autoRetry = remoteRetryConfig.isAutoRetryEnabled();
 
         if (!networkConnectivityManager.isConnected()) {
             return;
@@ -212,6 +215,7 @@ class IterableTaskRunner implements IterableTaskStorage.TaskCreatedListener, Han
                     null
             );
             request.setProcessorType(IterableApiRequest.ProcessorType.OFFLINE);
+            request.setRemoteRetryConfig(remoteRetryConfig);
             requestInFlight = true;
             requestDispatcher.executeForResponse(
                     request,

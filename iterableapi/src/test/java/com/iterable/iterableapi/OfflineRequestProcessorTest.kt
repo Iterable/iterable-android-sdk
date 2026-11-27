@@ -1,7 +1,11 @@
 package com.iterable.iterableapi
 
+import okhttp3.mockwebserver.MockResponse
+import okhttp3.mockwebserver.MockWebServer
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
 import org.junit.Before
 import org.junit.Test
@@ -11,12 +15,17 @@ import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.verifyNoInteractions
 import org.mockito.Mockito.`when`
+import org.robolectric.util.ReflectionHelpers
+import java.util.concurrent.TimeUnit
 
 class OfflineRequestProcessorTest : BaseTest() {
     private lateinit var requestProcessor: OfflineRequestProcessor
     private lateinit var taskScheduler: TaskScheduler
     private lateinit var healthMonitor: HealthMonitor
     private lateinit var immediateRequestDispatcher: IterableRequestDispatcher
+    private val remoteRetryConfig = IterableRemoteRetryConfig()
+    private val enabledPolicy = IterableNetworkRetryPolicy.Builder().setRetryEnabled(true).build()
+    private lateinit var authManager: ImmediateRefreshAuthManager
 
     @Before
     fun setUp() {
@@ -28,7 +37,9 @@ class OfflineRequestProcessorTest : BaseTest() {
             mock(IterableTaskRunner::class.java),
             mock(IterableTaskStorage::class.java),
             healthMonitor,
-            immediateRequestDispatcher
+            immediateRequestDispatcher,
+            remoteRetryConfig,
+            { enabledPolicy }
         )
     }
 
@@ -122,6 +133,66 @@ class OfflineRequestProcessorTest : BaseTest() {
         supportedEndpoints.forEach {
             assertEquals(true, requestProcessor.isRequestOfflineCompatible(it))
         }
+    }
+
+    @Test
+    fun `request sent after a failed task insert is not re-sent inline on a JWT 401 when autoRetry is on`() {
+        remoteRetryConfig.isAutoRetryEnabled = true
+        val server = sendAfterFailedInsertAndGetJwt401()
+
+        try {
+            assertNotNull(server.takeRequest(1, TimeUnit.SECONDS))
+            assertEquals("autoRetry is on, so the JWT 401 is not re-sent inline", 1, server.requestCount)
+            assertEquals(listOf(IterableAuthRefreshReason.JWT_401), authManager.refreshReasons)
+        } finally {
+            server.shutdown()
+            IterableRequestTask.overrideUrl = null
+        }
+    }
+
+    @Test
+    fun `request sent after a failed task insert is re-sent inline on a JWT 401 when autoRetry is off`() {
+        remoteRetryConfig.isAutoRetryEnabled = false
+        val server = sendAfterFailedInsertAndGetJwt401()
+
+        try {
+            assertNotNull(server.takeRequest(1, TimeUnit.SECONDS))
+            val resend = server.takeRequest(1, TimeUnit.SECONDS)
+            assertNotNull("With autoRetry off a JWT 401 is re-sent inline, as on master", resend)
+            assertEquals(
+                IterableConstants.HEADER_SDK_AUTH_FORMAT + ImmediateRefreshAuthManager.FRESH_TOKEN,
+                resend!!.getHeader(IterableConstants.HEADER_SDK_AUTHORIZATION)
+            )
+        } finally {
+            server.shutdown()
+            IterableRequestTask.overrideUrl = null
+        }
+    }
+
+    private fun sendAfterFailedInsertAndGetJwt401(): MockWebServer {
+        `when`(healthMonitor.canSchedule()).thenReturn(true)
+        val storage = mock(IterableTaskStorage::class.java)
+        val dispatcher = IterableRequestDispatcher(Runnable::run, Runnable::run) { runnable, _ -> runnable.run() }
+        val processor = OfflineRequestProcessor(
+            TaskScheduler(storage, mock(IterableTaskRunner::class.java), dispatcher),
+            mock(IterableTaskRunner::class.java),
+            storage,
+            healthMonitor,
+            dispatcher,
+            remoteRetryConfig,
+            { enabledPolicy }
+        )
+        authManager = ImmediateRefreshAuthManager(IterableApi.getInstance())
+        ReflectionHelpers.setField(IterableApi.getInstance(), "authManager", authManager)
+        val server = MockWebServer().apply {
+            enqueue(MockResponse().setResponseCode(401).setBody(
+                """{"code":"${IterableNetworkRetryClassifier.ERROR_CODE_INVALID_JWT_PAYLOAD}"}"""))
+            enqueue(MockResponse().setResponseCode(200).setBody("{}"))
+            start()
+        }
+        IterableApi.overrideURLEndpointPath(server.url("").toString())
+        processor.processPostRequest("api-key", IterableConstants.ENDPOINT_TRACK, JSONObject(), "expired-token", null, null)
+        return server
     }
 
     private fun captureDispatchedRequest(): IterableApiRequest {
