@@ -13,6 +13,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.util.ReflectionHelpers;
 
+import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
 import okhttp3.mockwebserver.MockResponse;
@@ -300,8 +301,8 @@ public class IterableTaskRunnerTest extends BaseTest {
     @Test
     public void testAutoRetryEnabled_JwtFailure_NoInlineResendOfStoredTask() throws Exception {
         initApiWithAutoRetry(true);
-        ReflectionHelpers.setField(IterableApi.getInstance(), "authManager",
-                new ImmediateRefreshAuthManager(IterableApi.getInstance()));
+        ImmediateRefreshAuthManager authManager = new ImmediateRefreshAuthManager(IterableApi.getInstance());
+        ReflectionHelpers.setField(IterableApi.getInstance(), "authManager", authManager);
 
         IterableApiRequest request = new IterableApiRequest("apiKey", "api/test", new JSONObject(), "POST", "expired_token", null, null);
         IterableTask task = new IterableTask("testTask", IterableTaskType.API, request.toJSONObject().toString());
@@ -320,6 +321,7 @@ public class IterableTaskRunnerTest extends BaseTest {
         assertNull("The kept task is replayed later, so an inline re-send would duplicate it",
                 server.takeRequest(500, TimeUnit.MILLISECONDS));
         verify(mockTaskStorage, never()).deleteTask(any(String.class));
+        assertEquals(Collections.singletonList(IterableAuthRefreshReason.JWT_401), authManager.refreshReasons);
     }
 
     @Test

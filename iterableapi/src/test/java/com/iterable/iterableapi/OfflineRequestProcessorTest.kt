@@ -25,6 +25,7 @@ class OfflineRequestProcessorTest : BaseTest() {
     private lateinit var immediateRequestDispatcher: IterableRequestDispatcher
     private val remoteRetryConfig = IterableRemoteRetryConfig()
     private val enabledPolicy = IterableNetworkRetryPolicy.Builder().setRetryEnabled(true).build()
+    private lateinit var authManager: ImmediateRefreshAuthManager
 
     @Before
     fun setUp() {
@@ -142,6 +143,7 @@ class OfflineRequestProcessorTest : BaseTest() {
         try {
             assertNotNull(server.takeRequest(1, TimeUnit.SECONDS))
             assertNull(server.takeRequest(500, TimeUnit.MILLISECONDS))
+            assertEquals(listOf(IterableAuthRefreshReason.JWT_401), authManager.refreshReasons)
         } finally {
             server.shutdown()
             IterableRequestTask.overrideUrl = null
@@ -180,8 +182,8 @@ class OfflineRequestProcessorTest : BaseTest() {
             remoteRetryConfig,
             { enabledPolicy }
         )
-        ReflectionHelpers.setField(IterableApi.getInstance(), "authManager",
-            ImmediateRefreshAuthManager(IterableApi.getInstance()))
+        authManager = ImmediateRefreshAuthManager(IterableApi.getInstance())
+        ReflectionHelpers.setField(IterableApi.getInstance(), "authManager", authManager)
         val server = MockWebServer().apply {
             enqueue(MockResponse().setResponseCode(401).setBody(
                 """{"code":"${IterableNetworkRetryClassifier.ERROR_CODE_INVALID_JWT_PAYLOAD}"}"""))
