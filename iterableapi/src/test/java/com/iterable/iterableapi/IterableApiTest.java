@@ -1070,6 +1070,22 @@ public class IterableApiTest extends BaseTest {
         assertSame(api.remoteRetryConfig, api.apiClient.getRemoteRetryConfig());
     }
 
+    @Test
+    public void testOfflineProcessorAndTaskRunnerShareRemoteRetryConfigWithApi() {
+        IterableApi.initialize(getContext(), "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
+        IterableApi api = IterableApi.getInstance();
+        api.apiClient.setOfflineProcessingEnabled(true);
+
+        OfflineRequestProcessor processor = ReflectionHelpers.getField(api.apiClient, "offlineRequestProcessor");
+        try {
+            IterableTaskRunner taskRunner = ReflectionHelpers.getField(processor, "taskRunner");
+            assertSame(api.remoteRetryConfig, ReflectionHelpers.getField(processor, "remoteRetryConfig"));
+            assertSame(api.remoteRetryConfig, ReflectionHelpers.getField(taskRunner, "remoteRetryConfig"));
+        } finally {
+            processor.dispose();
+        }
+    }
+
     //region Consent Logging Tests - Direct Unit Tests
     //---------------------------------------------------------------------------------------
 
