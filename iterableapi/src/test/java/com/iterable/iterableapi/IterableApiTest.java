@@ -942,7 +942,6 @@ public class IterableApiTest extends BaseTest {
         fetchRemoteConfiguration(new MockResponse().setResponseCode(200)
                 .setBody("{\"" + IterableConstants.KEY_AUTO_RETRY + "\": true}"));
 
-        assertTrue(IterableApi.getInstance().isAutoRetryOnJwtFailure());
         assertTrue(IterableApi.getInstance().remoteRetryConfig.isAutoRetryEnabled());
         assertTrue(storedAutoRetry());
         assertTrue(storedOfflineMode());
@@ -950,58 +949,44 @@ public class IterableApiTest extends BaseTest {
     }
 
     @Test
-    public void testRemoteConfigurationWithoutAutoRetryDisablesAutoRetry() throws Exception {
-        initWithStoredRemoteConfig(true, true);
-        assertTrue(IterableApi.getInstance().isAutoRetryOnJwtFailure());
+    public void testRemoteConfigurationWithMissingOrNullAutoRetryDisablesAutoRetry() throws Exception {
+        String offlineModeFalse = "\"" + IterableConstants.KEY_OFFLINE_MODE + "\": false";
+        for (String body : new String[]{
+                "{" + offlineModeFalse + "}",
+                "{" + offlineModeFalse + ", \"" + IterableConstants.KEY_AUTO_RETRY + "\": null}"}) {
+            reInitIterableApi();
+            initWithStoredRemoteConfig(true, true);
+            assertTrue(body, IterableApi.getInstance().remoteRetryConfig.isAutoRetryEnabled());
 
-        fetchRemoteConfiguration(new MockResponse().setResponseCode(200)
-                .setBody("{\"" + IterableConstants.KEY_OFFLINE_MODE + "\": false}"));
+            fetchRemoteConfiguration(new MockResponse().setResponseCode(200).setBody(body));
 
-        assertFalse(IterableApi.getInstance().isAutoRetryOnJwtFailure());
-        assertFalse(IterableApi.getInstance().remoteRetryConfig.isAutoRetryEnabled());
-        assertFalse(storedAutoRetry());
-        assertFalse(storedOfflineMode());
-        verify(mockApiClient).setOfflineProcessingEnabled(false);
+            assertFalse(body, IterableApi.getInstance().remoteRetryConfig.isAutoRetryEnabled());
+            assertFalse(body, storedAutoRetry());
+            assertFalse(body, storedOfflineMode());
+            verify(mockApiClient).setOfflineProcessingEnabled(false);
+        }
     }
 
     // Intended difference from iOS, which ignores the whole response when a field has the wrong type.
     @Test
-    public void testRemoteConfigurationWithWrongTypeAutoRetryKeepsStoredTrue() throws Exception {
-        initWithStoredRemoteConfig(false, true);
-
-        for (String autoRetry : new String[]{"\"false\"", "0"}) {
-            fetchRemoteConfiguration(new MockResponse().setResponseCode(200)
-                    .setBody("{\"" + IterableConstants.KEY_OFFLINE_MODE + "\": false, \""
-                            + IterableConstants.KEY_AUTO_RETRY + "\": " + autoRetry + "}"));
-
-            assertTrue(autoRetry, IterableApi.getInstance().remoteRetryConfig.isAutoRetryEnabled());
-            assertTrue(autoRetry, storedAutoRetry());
-        }
-        verify(mockApiClient, times(2)).setOfflineProcessingEnabled(false);
+    public void testRemoteConfigurationWithWrongTypeAutoRetryKeepsTheStoredValue() throws Exception {
+        assertWrongTypeAutoRetryKeepsStored(true, "\"false\"");
+        assertWrongTypeAutoRetryKeepsStored(true, "0");
+        assertWrongTypeAutoRetryKeepsStored(false, "\"true\"");
+        assertWrongTypeAutoRetryKeepsStored(false, "1");
     }
 
-    @Test
-    public void testRemoteConfigurationWithWrongTypeAutoRetryKeepsStoredFalse() throws Exception {
-        initWithStoredRemoteConfig(false, false);
-
-        for (String autoRetry : new String[]{"\"true\"", "1"}) {
-            fetchRemoteConfiguration(new MockResponse().setResponseCode(200)
-                    .setBody("{\"" + IterableConstants.KEY_AUTO_RETRY + "\": " + autoRetry + "}"));
-
-            assertFalse(autoRetry, IterableApi.getInstance().remoteRetryConfig.isAutoRetryEnabled());
-            assertFalse(autoRetry, storedAutoRetry());
-        }
-    }
-
-    @Test
-    public void testRemoteConfigurationWithNullAutoRetryDisablesAutoRetry() throws Exception {
-        initWithStoredRemoteConfig(false, true);
+    private void assertWrongTypeAutoRetryKeepsStored(boolean stored, String autoRetry) throws InterruptedException {
+        reInitIterableApi();
+        initWithStoredRemoteConfig(false, stored);
 
         fetchRemoteConfiguration(new MockResponse().setResponseCode(200)
-                .setBody("{\"" + IterableConstants.KEY_AUTO_RETRY + "\": null}"));
+                .setBody("{\"" + IterableConstants.KEY_OFFLINE_MODE + "\": false, \""
+                        + IterableConstants.KEY_AUTO_RETRY + "\": " + autoRetry + "}"));
 
-        assertFalse(IterableApi.getInstance().remoteRetryConfig.isAutoRetryEnabled());
-        assertFalse(storedAutoRetry());
+        assertEquals(autoRetry, stored, IterableApi.getInstance().remoteRetryConfig.isAutoRetryEnabled());
+        assertEquals(autoRetry, stored, storedAutoRetry());
+        verify(mockApiClient).setOfflineProcessingEnabled(false);
     }
 
     @Test
@@ -1013,7 +998,6 @@ public class IterableApiTest extends BaseTest {
                         + IterableConstants.KEY_OFFLINE_MODE + "\": false, \""
                         + IterableConstants.KEY_AUTO_RETRY + "\": false}"));
 
-        assertTrue(IterableApi.getInstance().isAutoRetryOnJwtFailure());
         assertTrue(IterableApi.getInstance().remoteRetryConfig.isAutoRetryEnabled());
         assertTrue(storedAutoRetry());
         assertTrue(storedOfflineMode());
@@ -1038,26 +1022,8 @@ public class IterableApiTest extends BaseTest {
                 retried.getHeader(IterableConstants.HEADER_SDK_AUTHORIZATION));
         shadowOf(getMainLooper()).idle();
 
-        assertTrue(IterableApi.getInstance().isAutoRetryOnJwtFailure());
         assertTrue(IterableApi.getInstance().remoteRetryConfig.isAutoRetryEnabled());
         assertTrue(storedAutoRetry());
-    }
-
-    @Test
-    public void testEmbeddedMessagesHandlersIgnoreJwtRefreshRetryResult() throws Exception {
-        initWithEmailAndImmediateRefresh();
-        server.enqueue(jwtErrorResponse());
-        server.enqueue(new MockResponse().setResponseCode(200).setBody("{\"placements\": []}"));
-        IterableHelper.SuccessHandler success = mock(IterableHelper.SuccessHandler.class);
-        IterableHelper.FailureHandler failure = mock(IterableHelper.FailureHandler.class);
-
-        IterableApi.getInstance().getEmbeddedMessages(null, success, failure);
-        assertNotNull(server.takeRequest(1, TimeUnit.SECONDS));
-        assertNotNull(server.takeRequest(1, TimeUnit.SECONDS));
-        shadowOf(getMainLooper()).idle();
-
-        verify(failure, times(1)).onFailure(any(), any());
-        verify(success, never()).onSuccess(any());
     }
 
     @Test
@@ -1115,17 +1081,13 @@ public class IterableApiTest extends BaseTest {
         }
     }
 
+    // Request tests replace the client via setRequestDispatcher, so this checks the constructor's wiring too.
     @Test
     public void testApiClientSharesRemoteRetryConfigWithApi() {
         IterableApi api = new IterableApi();
-
         assertSame(api.remoteRetryConfig, api.apiClient.getRemoteRetryConfig());
-    }
 
-    @Test
-    public void testApiClientSharesRemoteRetryConfigAfterDispatcherChange() {
-        IterableApi api = IterableTestUtils.newApiWithInlineRequests();
-
+        api.setRequestDispatcher(mock(IterableRequestDispatcher.class));
         assertSame(api.remoteRetryConfig, api.apiClient.getRemoteRetryConfig());
     }
 

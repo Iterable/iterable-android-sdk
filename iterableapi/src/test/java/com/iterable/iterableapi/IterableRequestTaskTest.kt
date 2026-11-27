@@ -89,66 +89,33 @@ class IterableRequestTaskTest {
     }
 
     @Test
-    fun `auth retry does not attach modern callbacks to the retried request`() {
-        val success = mock(IterableHelper.SuccessHandler::class.java)
-        val failure = mock(IterableHelper.FailureHandler::class.java)
-        val request = request(success, failure).apply {
-            setProcessorType(IterableApiRequest.ProcessorType.OFFLINE)
+    fun `auth retry keeps handlers only for opted-in online requests`() {
+        val plain = mock(IterableHelper.SuccessHandler::class.java)
+        val optedIn = IterableApiRequest.AuthRetrySuccessHandler { }
+        val rows = listOf(
+            Triple(IterableApiRequest.ProcessorType.ONLINE, plain, false),
+            Triple(IterableApiRequest.ProcessorType.OFFLINE, plain, false),
+            Triple(IterableApiRequest.ProcessorType.ONLINE, optedIn, true),
+            Triple(IterableApiRequest.ProcessorType.OFFLINE, optedIn, false)
+        )
+        for ((processorType, success, kept) in rows) {
+            val failure = mock(IterableHelper.FailureHandler::class.java)
+            val request = request(success, failure).apply { setProcessorType(processorType) }
+            val dispatcher = mock(IterableRequestDispatcher::class.java)
+
+            IterableRequestTask.retryRequestWithNewAuthToken("fresh-token", request, dispatcher)
+
+            val captor = ArgumentCaptor.forClass(IterableApiRequest::class.java)
+            verify(dispatcher).executeRetry(captor.capture(), eq(0))
+            val retried = captor.value
+            val row = "$processorType ${if (success === optedIn) "opted in" else "plain"}"
+            assertEquals(row, "fresh-token", retried.authToken)
+            assertEquals(row, request.resourcePath, retried.resourcePath)
+            assertSame(row, request.json, retried.json)
+            assertEquals(row, IterableApiRequest.ProcessorType.ONLINE, retried.processorType)
+            assertSame(row, if (kept) success else null, retried.successCallback)
+            assertSame(row, if (kept) failure else null, retried.failureCallback)
         }
-
-        IterableRequestTask.retryRequestWithNewAuthToken(
-            "fresh-token",
-            request,
-            requestDispatcher
-        )
-
-        val retriedRequest = captureDispatchedRequest()
-        assertEquals("fresh-token", retriedRequest.authToken)
-        assertEquals(request.resourcePath, retriedRequest.resourcePath)
-        assertSame(request.json, retriedRequest.json)
-        assertNull(retriedRequest.successCallback)
-        assertNull(retriedRequest.failureCallback)
-        assertEquals(
-            IterableApiRequest.ProcessorType.ONLINE,
-            retriedRequest.processorType
-        )
-    }
-
-    @Test
-    fun `auth retry drops modern callbacks on an online request`() {
-        val request = request(
-            mock(IterableHelper.SuccessHandler::class.java),
-            mock(IterableHelper.FailureHandler::class.java)
-        )
-
-        IterableRequestTask.retryRequestWithNewAuthToken(
-            "fresh-token",
-            request,
-            requestDispatcher
-        )
-
-        val retriedRequest = captureDispatchedRequest()
-        assertEquals("fresh-token", retriedRequest.authToken)
-        assertNull(retriedRequest.successCallback)
-        assertNull(retriedRequest.failureCallback)
-    }
-
-    @Test
-    fun `auth retry keeps callbacks that opt in`() {
-        val success = IterableApiRequest.AuthRetrySuccessHandler { }
-        val failure = mock(IterableHelper.FailureHandler::class.java)
-        val request = request(success, failure)
-
-        IterableRequestTask.retryRequestWithNewAuthToken(
-            "fresh-token",
-            request,
-            requestDispatcher
-        )
-
-        val retriedRequest = captureDispatchedRequest()
-        assertEquals("fresh-token", retriedRequest.authToken)
-        assertSame(success, retriedRequest.successCallback)
-        assertSame(failure, retriedRequest.failureCallback)
     }
 
     @Test
