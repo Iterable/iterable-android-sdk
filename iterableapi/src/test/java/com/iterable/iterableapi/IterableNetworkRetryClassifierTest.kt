@@ -140,6 +140,12 @@ class IterableNetworkRetryClassifierTest {
     }
 
     @Test
+    fun clockGoingBackwardsAcrossTheLongRangeStopsRetrying() {
+        val classifier = IterableNetworkRetryClassifier(enabledPolicy())
+        assertFalse(classifier.shouldRetry(Outcome.RETRIABLE, 1, Long.MAX_VALUE, Long.MIN_VALUE))
+    }
+
+    @Test
     fun overflowingElapsedTimeStopsRetrying() {
         val classifier = IterableNetworkRetryClassifier(enabledPolicy())
         assertFalse(classifier.shouldRetry(Outcome.RETRIABLE, 1, Long.MIN_VALUE, Long.MAX_VALUE))
