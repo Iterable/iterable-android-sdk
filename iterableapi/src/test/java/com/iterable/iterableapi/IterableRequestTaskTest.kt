@@ -14,6 +14,7 @@ import okhttp3.mockwebserver.Dispatcher
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.RecordedRequest
+import okhttp3.mockwebserver.SocketPolicy
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -328,6 +329,55 @@ class IterableRequestTaskTest {
         } finally {
             server.shutdown()
             IterableApi.sharedInstance = previousApi
+        }
+    }
+
+    @Test
+    fun `policy does not retry a GET whose 200 body breaks mid-read`() {
+        assertBrokenSuccessBodyIsTerminal { processor, success, failure ->
+            processor.processGetRequest("api-key", "api/test", JSONObject(), "token", success, failure)
+        }
+    }
+
+    @Test
+    fun `policy does not retry a POST whose 200 body breaks mid-read`() {
+        assertBrokenSuccessBodyIsTerminal { processor, success, failure ->
+            processor.processPostRequest("api-key", "api/test", JSONObject(), "token", success, failure)
+        }
+    }
+
+    private fun assertBrokenSuccessBodyIsTerminal(
+        send: (OnlineRequestProcessor, IterableHelper.SuccessHandler, IterableHelper.FailureHandler) -> Unit
+    ) {
+        val retries = PendingRetries()
+        val success = mock(IterableHelper.SuccessHandler::class.java)
+        val failure = mock(IterableHelper.FailureHandler::class.java)
+        val server = MockWebServer().apply {
+            // A cut fixed-length body comes back without an error on the JVM, so only a chunked body fails the read.
+            dispatcher = object : Dispatcher() {
+                override fun dispatch(request: RecordedRequest) = MockResponse()
+                    .setResponseCode(200)
+                    .setChunkedBody("{\"a\":\"" + "x".repeat(8_192) + "\"}", 1_024)
+                    .setSocketPolicy(SocketPolicy.DISCONNECT_DURING_RESPONSE_BODY)
+            }
+            start()
+        }
+        IterableRequestTask.overrideUrl = server.url("/").toString()
+        val remote = IterableRemoteRetryConfig().apply { isAutoRetryEnabled = true }
+
+        try {
+            val processor = OnlineRequestProcessor(dispatcher(ManualClock(), retries), { enabledPolicy }, remote)
+            send(processor, success, failure)
+            var guard = 0
+            while (retries.tasks.isNotEmpty() && guard++ < 10) {
+                retries.runNext()
+            }
+
+            assertEquals(1, server.requestCount)
+            verify(failure, times(1)).onFailure(eq("Premature EOF"), any())
+            verify(success, never()).onSuccess(any())
+        } finally {
+            server.shutdown()
         }
     }
 
