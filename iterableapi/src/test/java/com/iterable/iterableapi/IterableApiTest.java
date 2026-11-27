@@ -1073,7 +1073,9 @@ public class IterableApiTest extends BaseTest {
     // A fresh holder anywhere here silently turns remote autoRetry off for stored requests.
     @Test
     public void testRemoteRetryConfigReachesTheOfflineProcessorAndTaskRunner() {
-        IterableApi.initialize(getContext(), "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
+        IterableNetworkRetryPolicy policy = new IterableNetworkRetryPolicy.Builder().setRetryEnabled(true).build();
+        IterableApi.initialize(getContext(), "apiKey", new IterableConfig.Builder()
+                .setAutoPushRegistration(false).setNetworkRetryPolicy(policy).build());
         IterableApi api = IterableApi.getInstance();
         api.apiClient.setOfflineProcessingEnabled(true);
 
@@ -1082,6 +1084,10 @@ public class IterableApiTest extends BaseTest {
             IterableTaskRunner taskRunner = ReflectionHelpers.getField(processor, "taskRunner");
             assertSame(api.remoteRetryConfig, ReflectionHelpers.getField(processor, "remoteRetryConfig"));
             assertSame(api.remoteRetryConfig, ReflectionHelpers.getField(taskRunner, "remoteRetryConfig"));
+            IterableApiClient.NetworkRetryPolicyProvider policyProvider =
+                    ReflectionHelpers.getField(processor, "networkRetryPolicyProvider");
+            assertSame("offline processor should use the config's network retry policy",
+                    policy, policyProvider.getNetworkRetryPolicy());
         } finally {
             processor.dispose();
         }
