@@ -159,9 +159,11 @@ class IterableRequestTaskTest {
 
     @Test
     fun `policy applies only when enabled locally and by remote autoRetry`() {
-        assertSame(enabledPolicy, activePolicyFor(enabledPolicy, autoRetry = true))
-        assertNull(activePolicyFor(enabledPolicy, autoRetry = false))
-        assertNull(activePolicyFor(IterableNetworkRetryPolicy.DEFAULT, autoRetry = true))
+        for ((case, send) in onlineSends) {
+            assertSame(case, enabledPolicy, activePolicyFor(enabledPolicy, autoRetry = true, send))
+            assertNull(case, activePolicyFor(enabledPolicy, autoRetry = false, send))
+            assertNull(case, activePolicyFor(IterableNetworkRetryPolicy.DEFAULT, autoRetry = true, send))
+        }
     }
 
     @Test
@@ -497,13 +499,19 @@ class IterableRequestTaskTest {
         }
     }
 
+    private val onlineSends = mapOf<String, OnlineRequestProcessor.() -> Unit>(
+        "POST" to { processPostRequest("api-key", "api/test", JSONObject(), null, null, null) },
+        "GET with success/failure" to { processGetRequest("api-key", "api/test", JSONObject(), null, null, null) },
+        "GET with callback" to { processGetRequest("api-key", "api/test", JSONObject(), null, null) }
+    )
+
     private fun activePolicyFor(
         localPolicy: IterableNetworkRetryPolicy,
-        autoRetry: Boolean
+        autoRetry: Boolean,
+        send: OnlineRequestProcessor.() -> Unit
     ): IterableNetworkRetryPolicy? {
         val remote = IterableRemoteRetryConfig().apply { isAutoRetryEnabled = autoRetry }
-        OnlineRequestProcessor(requestDispatcher, { localPolicy }, remote)
-            .processPostRequest("api-key", "api/test", JSONObject(), null, null, null)
+        OnlineRequestProcessor(requestDispatcher, { localPolicy }, remote).send()
         val captor = ArgumentCaptor.forClass(IterableApiRequest::class.java)
         verify(requestDispatcher, org.mockito.Mockito.atLeastOnce()).execute(captor.capture())
         return captor.value.networkRetryPolicy
