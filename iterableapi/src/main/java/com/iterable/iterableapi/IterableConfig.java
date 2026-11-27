@@ -87,6 +87,13 @@ public class IterableConfig {
     final RetryPolicy retryPolicy;
 
     /**
+     * Retry policy for failed API requests. Not enabled by default, so the SDK's existing request retry
+     * behaviour is unchanged.
+     */
+    @NonNull
+    final IterableNetworkRetryPolicy networkRetryPolicy;
+
+    /**
      * By default, the SDK allows navigation/calls to URLs with the `https` protocol (e.g. deep links or external links)
      * If you'd like to allow other protocols like `http`, `tel`, etc., add them to the `allowedProtocols` array
      */
@@ -182,6 +189,11 @@ public class IterableConfig {
         return webViewBaseUrl;
     }
 
+    @NonNull
+    public IterableNetworkRetryPolicy getNetworkRetryPolicy() {
+        return networkRetryPolicy;
+    }
+
     private IterableConfig(Builder builder) {
         pushIntegrationName = builder.pushIntegrationName;
         urlHandler = builder.urlHandler;
@@ -194,6 +206,7 @@ public class IterableConfig {
         authHandler = builder.authHandler;
         expiringAuthTokenRefreshPeriodMillis = builder.expiringAuthTokenRefreshPeriodMillis;
         retryPolicy = builder.retryPolicy;
+        networkRetryPolicy = builder.networkRetryPolicy;
         allowedProtocols = builder.allowedProtocols;
         dataRegion = builder.dataRegion;
         useInMemoryStorageForInApps = builder.useInMemoryStorageForInApps;
@@ -224,6 +237,7 @@ public class IterableConfig {
         private IterableAuthHandler authHandler;
         private long expiringAuthTokenRefreshPeriodMillis = DEFAULT_EXPIRING_AUTH_TOKEN_REFRESH_PERIOD_SECONDS * 1000L;
         private RetryPolicy retryPolicy = new RetryPolicy(10, 6L, RetryPolicy.Type.LINEAR);
+        private IterableNetworkRetryPolicy networkRetryPolicy = IterableNetworkRetryPolicy.DEFAULT;
         private String[] allowedProtocols = new String[0];
         private IterableDataRegion dataRegion = IterableDataRegion.US;
         private boolean useInMemoryStorageForInApps = false;
@@ -358,6 +372,23 @@ public class IterableConfig {
         @NonNull
         public Builder setAuthRetryPolicy(@NonNull RetryPolicy retryPolicy) {
             this.retryPolicy = retryPolicy;
+            return this;
+        }
+
+        /**
+         * Set the retry policy for failed API requests. Defaults to {@link IterableNetworkRetryPolicy#DEFAULT},
+         * which is not enabled, so the SDK's existing request retry behaviour is unchanged. The policy only
+         * takes effect once enabled. Not applied to requests yet.
+         * @param networkRetryPolicy policy to use; {@code null} is treated as {@link IterableNetworkRetryPolicy#DEFAULT}
+         */
+        @NonNull
+        public Builder setNetworkRetryPolicy(@NonNull IterableNetworkRetryPolicy networkRetryPolicy) {
+            if (networkRetryPolicy == null) {
+                IterableLogger.e(TAG, "setNetworkRetryPolicy received null, defaulting to IterableNetworkRetryPolicy.DEFAULT");
+                this.networkRetryPolicy = IterableNetworkRetryPolicy.DEFAULT;
+                return this;
+            }
+            this.networkRetryPolicy = networkRetryPolicy;
             return this;
         }
 

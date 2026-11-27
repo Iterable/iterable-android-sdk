@@ -1,0 +1,118 @@
+package com.iterable.iterableapi
+
+import com.iterable.iterableapi.IterableNetworkRetryClassifier.Outcome
+import com.iterable.iterableapi.unit.TestRunner
+import org.json.JSONObject
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
+import org.junit.Test
+import org.junit.runner.RunWith
+
+@RunWith(TestRunner::class)
+class IterableNetworkRetryClassifierTest {
+
+    private val start = 1_000_000L
+
+    private fun enabledPolicy(deadlineSeconds: Double = 60.0) = IterableNetworkRetryPolicy.Builder()
+        .setRetryEnabled(true)
+        .setTotalDeadline(deadlineSeconds)
+        .build()
+
+    private fun jwtError(code: String) = JSONObject().put("code", code)
+
+    @Test
+    fun statusCodesAreClassified() {
+        val expected = mapOf(
+            Outcome.SUCCESS to listOf(200, 299),
+            Outcome.RETRIABLE to listOf(0, 500, 502, 503, 504, 599),
+            Outcome.TERMINAL to listOf(199, 300, 399, 400, 403, 404, 409, 422, 429, 499, 600, 999)
+        )
+        for ((outcome, codes) in expected) {
+            for (code in codes) {
+                assertEquals("code $code", outcome, IterableNetworkRetryClassifier.classify(code, null))
+            }
+        }
+    }
+
+    @Test
+    fun jwtBodiesReachTheAuthPathOnlyOn401() {
+        for (code in listOf(
+            IterableRequestTask.ERROR_CODE_INVALID_JWT_PAYLOAD,
+            IterableRequestTask.ERROR_CODE_MISSING_JWT_PAYLOAD,
+            IterableRequestTask.ERROR_CODE_JWT_USER_IDENTIFIERS_MISMATCHED
+        )) {
+            assertEquals(code, Outcome.AUTH, IterableNetworkRetryClassifier.classify(401, jwtError(code)))
+        }
+        val jwtBody = jwtError(IterableRequestTask.ERROR_CODE_INVALID_JWT_PAYLOAD)
+        for ((code, body) in listOf(403 to jwtBody, 400 to jwtBody, 401 to null, 401 to jwtError("BadApiKey"))) {
+            assertEquals("$code $body", Outcome.TERMINAL, IterableNetworkRetryClassifier.classify(code, body))
+        }
+    }
+
+    @Test
+    fun defaultPolicyNeverRetries() {
+        val classifier = IterableNetworkRetryClassifier(IterableNetworkRetryPolicy.DEFAULT)
+        assertFalse(classifier.shouldRetry(Outcome.RETRIABLE, 1, start, start))
+    }
+
+    @Test
+    fun onlyRetriableOutcomesAreRetried() {
+        val classifier = IterableNetworkRetryClassifier(enabledPolicy())
+        for (outcome in Outcome.values()) {
+            assertEquals(outcome.name, outcome == Outcome.RETRIABLE, classifier.shouldRetry(outcome, 1, start, start))
+        }
+    }
+
+    @Test
+    fun retriesStopAfterMaxAttempts() {
+        fun retries(maxAttempts: Int, failedAttempt: Int) = IterableNetworkRetryClassifier(
+            IterableNetworkRetryPolicy.Builder().setRetryEnabled(true).setMaxAttempts(maxAttempts).build()
+        ).shouldRetry(Outcome.RETRIABLE, failedAttempt, start, start)
+
+        for ((maxAttempts, attempt) in listOf(5 to 1, 5 to 2, 5 to 3, 5 to 4, 3 to 2)) {
+            assertTrue("max $maxAttempts, attempt $attempt", retries(maxAttempts, attempt))
+        }
+        for ((maxAttempts, attempt) in listOf(5 to 5, 3 to 3, 1 to 1, 5 to 0, 5 to -1)) {
+            assertFalse("max $maxAttempts, attempt $attempt", retries(maxAttempts, attempt))
+        }
+    }
+
+    @Test
+    fun retriesStopWhenTheNextDelayWouldPassTheDeadline() {
+        fun classifierWith(intervalSeconds: Double, deadlineSeconds: Double) = IterableNetworkRetryClassifier(
+            IterableNetworkRetryPolicy.Builder()
+                .setRetryEnabled(true)
+                .setBackoffPolicy(IterableNetworkRetryPolicy.BackoffPolicy.fixed(intervalSeconds))
+                .setTotalDeadline(deadlineSeconds)
+                .build()
+        )
+
+        val deadline = 10_000L
+        for (delay in listOf(2_000L, 500L)) {
+            val classifier = classifierWith(delay / 1000.0, deadline / 1000.0)
+            val lastRetry = deadline - delay
+            assertEquals(delay, classifier.delayMillis())
+            assertTrue("delay $delay", classifier.shouldRetry(Outcome.RETRIABLE, 1, start, start + lastRetry))
+            assertFalse("delay $delay", classifier.shouldRetry(Outcome.RETRIABLE, 1, start, start + lastRetry + 1))
+        }
+        val delayLongerThanTheDeadline = classifierWith(Double.MAX_VALUE, 60.0)
+        assertFalse("MAX delay at 0 ms", delayLongerThanTheDeadline.shouldRetry(Outcome.RETRIABLE, 1, start, start))
+        assertFalse("MAX delay at 1 ms", delayLongerThanTheDeadline.shouldRetry(Outcome.RETRIABLE, 1, start, start + 1L))
+    }
+
+    @Test
+    fun backwardsOrWrappedClockStopsRetrying() {
+        val classifier = IterableNetworkRetryClassifier(enabledPolicy())
+        // The last two rows wrap the subtraction, to 1 and to -1.
+        for ((first, now) in listOf(start to start - 1L, Long.MAX_VALUE to Long.MIN_VALUE, Long.MIN_VALUE to Long.MAX_VALUE)) {
+            assertFalse("$first to $now", classifier.shouldRetry(Outcome.RETRIABLE, 1, first, now))
+        }
+    }
+
+    @Test
+    fun zeroDeadlineIsUnbounded() {
+        val classifier = IterableNetworkRetryClassifier(enabledPolicy(deadlineSeconds = 0.0))
+        assertTrue(classifier.shouldRetry(Outcome.RETRIABLE, 1, start, start + 3_600_000L))
+    }
+}

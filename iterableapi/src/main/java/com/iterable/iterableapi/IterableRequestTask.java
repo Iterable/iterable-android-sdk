@@ -368,7 +368,7 @@ class IterableRequestTask implements Runnable {
         }
     }
 
-    private static boolean matchesJWTErrorCodes(JSONObject jsonResponse) {
+    static boolean matchesJWTErrorCodes(JSONObject jsonResponse) {
         return matchesErrorCode(jsonResponse, ERROR_CODE_INVALID_JWT_PAYLOAD) || matchesErrorCode(jsonResponse, ERROR_CODE_MISSING_JWT_PAYLOAD) || matchesErrorCode(jsonResponse, ERROR_CODE_JWT_USER_IDENTIFIERS_MISMATCHED);
     }
 
