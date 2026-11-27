@@ -1070,8 +1070,9 @@ public class IterableApiTest extends BaseTest {
         assertSame(api.remoteRetryConfig, api.apiClient.getRemoteRetryConfig());
     }
 
+    // A fresh holder anywhere here silently turns remote autoRetry off for stored requests.
     @Test
-    public void testOfflineProcessorAndTaskRunnerShareRemoteRetryConfigWithApi() {
+    public void testRemoteRetryConfigReachesTheOfflineProcessorAndTaskRunner() {
         IterableApi.initialize(getContext(), "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
         IterableApi api = IterableApi.getInstance();
         api.apiClient.setOfflineProcessingEnabled(true);

@@ -29,47 +29,19 @@ class IterableRequestTaskTest {
     }
 
     @Test
-    fun `server error schedules a retry without calling a terminal callback`() {
-        val success = mock(IterableHelper.SuccessHandler::class.java)
-        val failure = mock(IterableHelper.FailureHandler::class.java)
-        val request = request(success, failure)
-
-        IterableRequestTask(request, 0, requestDispatcher).handleResponse(
-            serverError()
-        )
-
-        verify(requestDispatcher).retry(request, 1, 0)
-        verifyNoInteractions(success, failure)
-    }
-
-    @Test
-    fun `later server error retries use the existing backoff`() {
-        val request = request()
-
-        IterableRequestTask(request, 3, requestDispatcher).handleResponse(
-            serverError()
-        )
-
-        verify(requestDispatcher).retry(
-            request,
-            4,
-            IterableRequestTask.RETRY_DELAY_MS * 3
-        )
-    }
-
-    @Test
     fun `server errors follow the legacy retry schedule`() {
         val expectedDelays = longArrayOf(0, 0, 0, 6000, 8000, 10000)
 
         for (code in intArrayOf(500, 503, 599)) {
             for (retryCount in expectedDelays.indices) {
+                val success = mock(IterableHelper.SuccessHandler::class.java)
                 val failure = mock(IterableHelper.FailureHandler::class.java)
-                val request = request(onFailure = failure)
+                val request = request(success, failure)
 
                 IterableRequestTask(request, retryCount, requestDispatcher).handleResponse(serverError(code))
 
                 verify(requestDispatcher).retry(request, retryCount + 1, expectedDelays[retryCount])
-                verifyNoInteractions(failure)
+                verifyNoInteractions(success, failure)
             }
         }
     }
@@ -94,11 +66,8 @@ class IterableRequestTaskTest {
         val request = request(onFailure = failure)
         val responseData = JSONObject()
 
-        IterableRequestTask(
-            request,
-            IterableRequestTask.MAX_RETRY_COUNT + 1,
-            requestDispatcher
-        ).handleResponse(
+        // A literal on purpose, so changing MAX_RETRY_COUNT fails this test.
+        IterableRequestTask(request, 6, requestDispatcher).handleResponse(
             IterableApiResponse.failure(
                 500,
                 """{"msg":"Server unavailable"}""",
@@ -117,25 +86,6 @@ class IterableRequestTaskTest {
             500,
             responseData.getInt(IterableConstants.HTTP_STATUS_CODE)
         )
-    }
-
-    @Test
-    fun `server error after six legacy retries calls failure exactly once`() {
-        val failure = mock(IterableHelper.FailureHandler::class.java)
-        val responseData = JSONObject()
-
-        // A literal on purpose, so changing MAX_RETRY_COUNT fails this test.
-        IterableRequestTask(request(onFailure = failure), 6, requestDispatcher).handleResponse(
-            IterableApiResponse.failure(
-                500,
-                """{"msg":"Server unavailable"}""",
-                responseData,
-                "Server unavailable"
-            )
-        )
-
-        verifyNoRetry()
-        verify(failure).onFailure("Server unavailable", responseData)
     }
 
     @Test

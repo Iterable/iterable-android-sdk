@@ -267,8 +267,10 @@ public class IterableTaskRunnerTest extends BaseTest {
     }
 
     @Test
-    public void testAutoRetryEnabled_JwtFailure_TaskRetainedInDB() throws Exception {
+    public void testAutoRetryEnabled_JwtFailure_TaskRetainedInDBAndNotResentInline() throws Exception {
         initApiWithAutoRetry(true);
+        ImmediateRefreshAuthManager authManager = new ImmediateRefreshAuthManager(IterableApi.getInstance());
+        ReflectionHelpers.setField(IterableApi.getInstance(), "authManager", authManager);
 
         IterableApiRequest request = new IterableApiRequest("apiKey", "api/test", new JSONObject(), "POST", "expired_token", null, null);
         IterableTask task = new IterableTask("testTask", IterableTaskType.API, request.toJSONObject().toString());
@@ -280,6 +282,7 @@ public class IterableTaskRunnerTest extends BaseTest {
         server.enqueue(new MockResponse()
                 .setResponseCode(401)
                 .setBody(createJwt401ResponseBody()));
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
 
         IterableTaskRunner.TaskCompletedListener taskCompletedListener = mock(IterableTaskRunner.TaskCompletedListener.class);
         taskRunner.addTaskCompletedListener(taskCompletedListener);
@@ -296,64 +299,15 @@ public class IterableTaskRunnerTest extends BaseTest {
         verify(taskCompletedListener).onTaskCompleted(any(String.class), eq(IterableTaskRunner.TaskResult.RETRY), any(IterableApiResponse.class));
 
         assertEquals(IterableAuthManager.AuthState.INVALID, IterableApi.getInstance().getAuthManager().getAuthState());
-    }
-
-    @Test
-    public void testAutoRetryEnabled_JwtFailure_NoInlineResendOfStoredTask() throws Exception {
-        initApiWithAutoRetry(true);
-        ImmediateRefreshAuthManager authManager = new ImmediateRefreshAuthManager(IterableApi.getInstance());
-        ReflectionHelpers.setField(IterableApi.getInstance(), "authManager", authManager);
-
-        IterableApiRequest request = new IterableApiRequest("apiKey", "api/test", new JSONObject(), "POST", "expired_token", null, null);
-        IterableTask task = new IterableTask("testTask", IterableTaskType.API, request.toJSONObject().toString());
-        when(mockTaskStorage.getNextScheduledTask()).thenReturn(task).thenReturn(null);
-        when(mockActivityMonitor.isInForeground()).thenReturn(true);
-        when(mockNetworkConnectivityManager.isConnected()).thenReturn(true);
-        when(mockHealthMonitor.canProcess()).thenReturn(true);
-        server.enqueue(new MockResponse().setResponseCode(401).setBody(createJwt401ResponseBody()));
-        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
-
-        taskRunner.onTaskCreated(null);
-        runHandlerTasks(taskRunner);
-        shadowOf(getMainLooper()).idle();
-
-        assertNotNull(server.takeRequest(1, TimeUnit.SECONDS));
-        assertNull("The kept task is replayed later, so an inline re-send would duplicate it",
-                server.takeRequest(500, TimeUnit.MILLISECONDS));
-        verify(mockTaskStorage, never()).deleteTask(any(String.class));
+        assertEquals("The kept task is replayed later, so an inline re-send would duplicate it", 1, server.getRequestCount());
         assertEquals(Collections.singletonList(IterableAuthRefreshReason.JWT_401), authManager.refreshReasons);
     }
 
     @Test
-    public void testAutoRetryDisabled_JwtFailure_StoredTaskIsResentInline() throws Exception {
+    public void testAutoRetryDisabled_JwtFailure_TaskDeletedFromDBAndResentInline() throws Exception {
         initApiWithAutoRetry(false);
         ReflectionHelpers.setField(IterableApi.getInstance(), "authManager",
                 new ImmediateRefreshAuthManager(IterableApi.getInstance()));
-
-        IterableApiRequest request = new IterableApiRequest("apiKey", "api/test", new JSONObject(), "POST", "expired_token", null, null);
-        IterableTask task = new IterableTask("testTask", IterableTaskType.API, request.toJSONObject().toString());
-        when(mockTaskStorage.getNextScheduledTask()).thenReturn(task).thenReturn(null);
-        when(mockActivityMonitor.isInForeground()).thenReturn(true);
-        when(mockNetworkConnectivityManager.isConnected()).thenReturn(true);
-        when(mockHealthMonitor.canProcess()).thenReturn(true);
-        server.enqueue(new MockResponse().setResponseCode(401).setBody(createJwt401ResponseBody()));
-        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
-
-        taskRunner.onTaskCreated(null);
-        runHandlerTasks(taskRunner);
-        shadowOf(getMainLooper()).idle();
-
-        assertNotNull(server.takeRequest(1, TimeUnit.SECONDS));
-        RecordedRequest resend = server.takeRequest(1, TimeUnit.SECONDS);
-        assertNotNull("With autoRetry off a JWT 401 is re-sent inline, as on master", resend);
-        assertEquals(IterableConstants.HEADER_SDK_AUTH_FORMAT + ImmediateRefreshAuthManager.FRESH_TOKEN,
-                resend.getHeader(IterableConstants.HEADER_SDK_AUTHORIZATION));
-        verify(mockTaskStorage).deleteTask(any(String.class));
-    }
-
-    @Test
-    public void testAutoRetryDisabled_JwtFailure_TaskDeletedFromDB() throws Exception {
-        initApiWithAutoRetry(false);
 
         IterableApiRequest request = new IterableApiRequest("apiKey", "api/test", new JSONObject(), "POST", "expired_token", null, null);
         IterableTask task = new IterableTask("testTask", IterableTaskType.API, request.toJSONObject().toString());
@@ -365,6 +319,7 @@ public class IterableTaskRunnerTest extends BaseTest {
         server.enqueue(new MockResponse()
                 .setResponseCode(401)
                 .setBody(createJwt401ResponseBody()));
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
 
         taskRunner.onTaskCreated(null);
         runHandlerTasks(taskRunner);
@@ -374,6 +329,10 @@ public class IterableTaskRunnerTest extends BaseTest {
 
         shadowOf(getMainLooper()).idle();
         verify(mockTaskStorage).deleteTask(any(String.class));
+        RecordedRequest resend = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull("With autoRetry off a JWT 401 is re-sent inline, as on master", resend);
+        assertEquals(IterableConstants.HEADER_SDK_AUTH_FORMAT + ImmediateRefreshAuthManager.FRESH_TOKEN,
+                resend.getHeader(IterableConstants.HEADER_SDK_AUTHORIZATION));
     }
 
     @Test

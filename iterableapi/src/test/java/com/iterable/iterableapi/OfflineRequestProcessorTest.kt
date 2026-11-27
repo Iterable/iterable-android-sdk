@@ -142,7 +142,7 @@ class OfflineRequestProcessorTest : BaseTest() {
 
         try {
             assertNotNull(server.takeRequest(1, TimeUnit.SECONDS))
-            assertNull(server.takeRequest(500, TimeUnit.MILLISECONDS))
+            assertEquals("autoRetry is on, so the JWT 401 is not re-sent inline", 1, server.requestCount)
             assertEquals(listOf(IterableAuthRefreshReason.JWT_401), authManager.refreshReasons)
         } finally {
             server.shutdown()
