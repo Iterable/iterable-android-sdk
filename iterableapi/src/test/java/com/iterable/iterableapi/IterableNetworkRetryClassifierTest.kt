@@ -8,6 +8,17 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.io.EOFException
+import java.io.IOException
+import java.net.ConnectException
+import java.net.MalformedURLException
+import java.net.SocketException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
+import java.security.cert.CertPathValidatorException
+import java.security.cert.CertificateException
+import javax.net.ssl.SSLException
+import javax.net.ssl.SSLHandshakeException
 
 @RunWith(TestRunner::class)
 class IterableNetworkRetryClassifierTest {
@@ -49,6 +60,51 @@ class IterableNetworkRetryClassifierTest {
             assertEquals("$code $body", Outcome.TERMINAL, IterableNetworkRetryClassifier.classify(code, body))
         }
     }
+
+    @Test
+    fun timeoutsDnsFailuresAndDroppedConnectionsAreNetworkFailures() {
+        val networkFailures = listOf(
+            SocketTimeoutException("Read timed out"),
+            UnknownHostException("api.iterable.com"),
+            ConnectException("Connection refused"),
+            SocketException("Connection reset"),
+            EOFException(),
+            IOException("unexpected end of stream on http://api.iterable.com/...", EOFException("\\n not found")),
+            IOException("unexpected end of stream", SocketException("Connection reset")),
+            IOException("outer", IOException("inner", EOFException())),
+            IOException("wrapped", SocketTimeoutException("Read timed out")),
+            IOException("wrapped", UnknownHostException("api.iterable.com")),
+            SSLException("Read error", SocketException("Connection reset")),
+            SSLHandshakeException("Remote host terminated the handshake").apply {
+                initCause(EOFException("SSL peer shut down incorrectly"))
+            }
+        )
+        for (e in networkFailures) {
+            assertTrue(causeChain(e), IterableNetworkRetryClassifier.isNetworkFailure(e))
+        }
+    }
+
+    @Test
+    fun otherIoFailuresAreNotNetworkFailures() {
+        val otherFailures = listOf(
+            IOException("stream closed"),
+            IOException("wrapped", IllegalStateException("not network")),
+            SSLHandshakeException("handshake failed"),
+            SSLException("Unrecognized SSL message, plaintext connection?"),
+            MalformedURLException("no protocol"),
+            SSLHandshakeException("handshake failed").apply {
+                initCause(CertificateException("Could not parse certificate", EOFException()))
+            },
+            SSLHandshakeException("handshake failed").apply {
+                initCause(CertPathValidatorException("path validation failed", EOFException()))
+            }
+        )
+        for (e in otherFailures) {
+            assertFalse(causeChain(e), IterableNetworkRetryClassifier.isNetworkFailure(e))
+        }
+    }
+
+    private fun causeChain(e: Throwable) = generateSequence(e) { it.cause }.joinToString(" <- ")
 
     @Test
     fun defaultPolicyNeverRetries() {
