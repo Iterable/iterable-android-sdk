@@ -72,14 +72,15 @@ class IterableNetworkRetryPolicyTest {
     }
 
     @Test
-    fun hugeSecondsDoNotOverflowTheMillisecondValues() {
+    fun hugeSecondsAreClampedToTenYears() {
         val policy = IterableNetworkRetryPolicy.Builder()
             .setBackoffPolicy(IterableNetworkRetryPolicy.BackoffPolicy.fixed(Double.MAX_VALUE))
             .setTotalDeadline(Double.MAX_VALUE)
             .build()
 
-        assertTrue(policy.backoffPolicy.intervalMillis > 0)
-        assertTrue(policy.totalDeadlineMillis > 0)
+        assertEquals(315_360_000.0, policy.backoffPolicy.interval, 0.0)
+        assertEquals(315_360_000.0, policy.totalDeadline, 0.0)
+        assertEquals(315_360_000_000L, policy.totalDeadlineMillis)
     }
 
     @Test
@@ -130,19 +131,54 @@ class IterableNetworkRetryPolicyTest {
         assertEquals(0.0, policy.backoffPolicy.interval, 0.0)
     }
 
-    @Test(expected = IllegalArgumentException::class)
-    fun maxAttemptsBelowOneIsRejected() {
-        IterableNetworkRetryPolicy.Builder().setMaxAttempts(0)
+    @Test
+    fun invalidValuesAreLoggedAndKeepThePreviousValue() {
+        val policy = IterableNetworkRetryPolicy.Builder()
+            .setMaxAttempts(3)
+            .setMaxAttempts(0)
+            .setTotalDeadline(10.0)
+            .setTotalDeadline(-1.0)
+            .build()
+
+        assertEquals(3, policy.maxAttempts)
+        assertEquals(10.0, policy.totalDeadline, 0.0)
+        assertEquals(1, errorsFor("IterableNetworkRetryPolicy", "maxAttempts"))
+        assertEquals(1, errorsFor("IterableNetworkRetryPolicy", "totalDeadline"))
     }
 
-    @Test(expected = IllegalArgumentException::class)
-    fun negativeIntervalIsRejected() {
-        IterableNetworkRetryPolicy.BackoffPolicy.fixed(-1.0)
+    @Test
+    fun invalidValuesKeepTheDefaults() {
+        val policy = IterableNetworkRetryPolicy.Builder()
+            .setMaxAttempts(0)
+            .setTotalDeadline(-1.0)
+            .build()
+
+        assertEquals(5, policy.maxAttempts)
+        assertEquals(60.0, policy.totalDeadline, 0.0)
     }
 
-    @Test(expected = IllegalArgumentException::class)
-    fun negativeDeadlineIsRejected() {
-        IterableNetworkRetryPolicy.Builder().setTotalDeadline(-1.0)
+    @Test
+    fun invalidIntervalIsLoggedAndGivesTheDefaultInterval() {
+        val backoff = IterableNetworkRetryPolicy.BackoffPolicy.fixed(-1.0)
+
+        assertEquals(2.0, backoff.interval, 0.0)
+        assertEquals(1, errorsFor("IterableNetworkRetryPolicy", "BackoffPolicy.fixed"))
+    }
+
+    @Test
+    fun nanAndInfiniteSecondsAreIgnored() {
+        for (value in listOf(Double.NaN, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY)) {
+            val policy = IterableNetworkRetryPolicy.Builder()
+                .setTotalDeadline(10.0)
+                .setTotalDeadline(value)
+                .setBackoffPolicy(IterableNetworkRetryPolicy.BackoffPolicy.fixed(value))
+                .build()
+
+            assertEquals("deadline $value", 10.0, policy.totalDeadline, 0.0)
+            assertEquals("interval $value", 2.0, policy.backoffPolicy.interval, 0.0)
+        }
+        assertEquals(3, errorsFor("IterableNetworkRetryPolicy", "totalDeadline"))
+        assertEquals(3, errorsFor("IterableNetworkRetryPolicy", "BackoffPolicy.fixed"))
     }
 
     private fun errorsFor(tag: String, text: String) = ShadowLog.getLogsForTag(tag)

@@ -9,6 +9,7 @@ import androidx.annotation.NonNull;
  */
 public final class IterableNetworkRetryPolicy {
     private static final String TAG = "IterableNetworkRetryPolicy";
+    private static final double MAX_SECONDS = 315_360_000d;
 
     /**
      * Not enabled, so the SDK's existing request retry behaviour is unchanged. Once enabled: 5 attempts,
@@ -58,7 +59,15 @@ public final class IterableNetworkRetryPolicy {
         return totalDeadlineMillis;
     }
 
-    private static long secondsToMillis(double seconds) {
+    private static boolean isValidSeconds(double seconds) {
+        return seconds >= 0 && !Double.isInfinite(seconds);
+    }
+
+    private static long secondsToMillis(String name, double seconds) {
+        if (seconds > MAX_SECONDS) {
+            IterableLogger.w(TAG, name + " of " + seconds + "s exceeds the maximum, clamping to " + MAX_SECONDS + "s");
+            return Math.round(MAX_SECONDS * 1000d);
+        }
         return Math.round(seconds * 1000d);
     }
 
@@ -66,6 +75,7 @@ public final class IterableNetworkRetryPolicy {
      * Delay between retry attempts.
      */
     public static final class BackoffPolicy {
+        static final BackoffPolicy DEFAULT = new BackoffPolicy(2_000L);
 
         private final long intervalMillis;
 
@@ -75,14 +85,21 @@ public final class IterableNetworkRetryPolicy {
 
         /**
          * Waits the same interval before every retry.
-         * @param intervalSeconds delay in seconds, must be 0 or more
+         * <p>
+         * Invalid values (negative, {@code NaN} or infinite) are logged and ignored rather than throwing,
+         * and the default 2 second interval is returned. Values above ~10 years are clamped to that
+         * ceiling. Zero is valid and means no delay.
+         *
+         * @param intervalSeconds delay in seconds
          */
         @NonNull
         public static BackoffPolicy fixed(double intervalSeconds) {
-            if (intervalSeconds < 0) {
-                throw new IllegalArgumentException("intervalSeconds must be >= 0");
+            if (!isValidSeconds(intervalSeconds)) {
+                IterableLogger.e(TAG, "BackoffPolicy.fixed interval must be a finite number of seconds, 0 or more (was "
+                        + intervalSeconds + "), ignoring it and using the default 2s");
+                return DEFAULT;
             }
-            return new BackoffPolicy(secondsToMillis(intervalSeconds));
+            return new BackoffPolicy(secondsToMillis("BackoffPolicy.fixed interval", intervalSeconds));
         }
 
         /**
@@ -102,12 +119,10 @@ public final class IterableNetworkRetryPolicy {
     }
 
     public static final class Builder {
-        private static final BackoffPolicy DEFAULT_BACKOFF_POLICY = new BackoffPolicy(2_000L);
-
         private boolean retryEnabled = false;
         private int maxAttempts = 5;
         @NonNull
-        private BackoffPolicy backoffPolicy = DEFAULT_BACKOFF_POLICY;
+        private BackoffPolicy backoffPolicy = BackoffPolicy.DEFAULT;
         private long totalDeadlineMillis = 60_000L;
 
         @NonNull
@@ -117,12 +132,17 @@ public final class IterableNetworkRetryPolicy {
         }
 
         /**
+         * Values below 1 are logged and ignored rather than throwing, leaving the value at whatever it was
+         * before the call: 5 unless an earlier call set something else.
+         *
          * @param maxAttempts total attempts including the first one, must be 1 or more
          */
         @NonNull
         public Builder setMaxAttempts(int maxAttempts) {
             if (maxAttempts < 1) {
-                throw new IllegalArgumentException("maxAttempts must be >= 1");
+                IterableLogger.e(TAG, "maxAttempts must be 1 or more (was " + maxAttempts + "), ignoring it and keeping "
+                        + this.maxAttempts);
+                return this;
             }
             this.maxAttempts = maxAttempts;
             return this;
@@ -135,7 +155,7 @@ public final class IterableNetworkRetryPolicy {
         public Builder setBackoffPolicy(@NonNull BackoffPolicy backoffPolicy) {
             if (backoffPolicy == null) {
                 IterableLogger.e(TAG, "setBackoffPolicy received null, defaulting to a fixed 2 second interval");
-                this.backoffPolicy = DEFAULT_BACKOFF_POLICY;
+                this.backoffPolicy = BackoffPolicy.DEFAULT;
                 return this;
             }
             this.backoffPolicy = backoffPolicy;
@@ -143,14 +163,20 @@ public final class IterableNetworkRetryPolicy {
         }
 
         /**
+         * Invalid values (negative, {@code NaN} or infinite) are logged and ignored rather than throwing,
+         * leaving the deadline at whatever it was before the call: 60 seconds unless an earlier call set
+         * something else. Values above ~10 years are clamped to that ceiling.
+         *
          * @param seconds deadline in seconds, 0 for none
          */
         @NonNull
         public Builder setTotalDeadline(double seconds) {
-            if (seconds < 0) {
-                throw new IllegalArgumentException("totalDeadline must be >= 0");
+            if (!isValidSeconds(seconds)) {
+                IterableLogger.e(TAG, "totalDeadline must be a finite number of seconds, 0 or more (was " + seconds
+                        + "), ignoring it and keeping " + totalDeadlineMillis / 1000d + "s");
+                return this;
             }
-            this.totalDeadlineMillis = secondsToMillis(seconds);
+            this.totalDeadlineMillis = secondsToMillis("totalDeadline", seconds);
             return this;
         }
 
