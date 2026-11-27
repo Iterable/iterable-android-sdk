@@ -20,6 +20,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.robolectric.Robolectric;
 import org.robolectric.android.controller.ActivityController;
+import org.robolectric.util.ReflectionHelpers;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -38,8 +39,10 @@ import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertNull;
+import static junit.framework.Assert.assertSame;
 import static junit.framework.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.atLeastOnce;
@@ -900,6 +903,192 @@ public class IterableApiTest extends BaseTest {
 
         IterableActivityMonitor.getInstance().unregisterLifecycleCallbacks(getContext());
         IterableActivityMonitor.instance = new IterableActivityMonitor();
+    }
+
+    private void initWithStoredRemoteConfig(boolean offlineMode, boolean autoRetry) {
+        getContext().getSharedPreferences(IterableConstants.SHARED_PREFS_SAVED_CONFIGURATION, Context.MODE_PRIVATE)
+                .edit()
+                .putBoolean(IterableConstants.SHARED_PREFS_OFFLINE_MODE_KEY, offlineMode)
+                .putBoolean(IterableConstants.SHARED_PREFS_AUTO_RETRY_KEY, autoRetry)
+                .commit();
+        IterableApi.initialize(getContext(), "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
+        clearInvocations(mockApiClient);
+    }
+
+    private void fetchRemoteConfiguration(MockResponse response) throws InterruptedException {
+        server.enqueue(response);
+        IterableApi.getInstance().fetchRemoteConfiguration();
+        RecordedRequest request = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(request);
+        assertTrue(request.getRequestUrl().toString().contains("/getRemoteConfiguration"));
+        shadowOf(getMainLooper()).idle();
+    }
+
+    private boolean storedAutoRetry() {
+        return getContext().getSharedPreferences(IterableConstants.SHARED_PREFS_SAVED_CONFIGURATION, Context.MODE_PRIVATE)
+                .getBoolean(IterableConstants.SHARED_PREFS_AUTO_RETRY_KEY, false);
+    }
+
+    private boolean storedOfflineMode() {
+        return getContext().getSharedPreferences(IterableConstants.SHARED_PREFS_SAVED_CONFIGURATION, Context.MODE_PRIVATE)
+                .getBoolean(IterableConstants.SHARED_PREFS_OFFLINE_MODE_KEY, false);
+    }
+
+    // Intended difference from iOS, which ignores the whole response when a field is missing.
+    @Test
+    public void testRemoteConfigurationWithoutOfflineModeStillAppliesAutoRetry() throws Exception {
+        initWithStoredRemoteConfig(true, false);
+
+        fetchRemoteConfiguration(new MockResponse().setResponseCode(200)
+                .setBody("{\"" + IterableConstants.KEY_AUTO_RETRY + "\": true}"));
+
+        assertTrue(IterableApi.getInstance().remoteRetryConfig.isAutoRetryEnabled());
+        assertTrue(storedAutoRetry());
+        assertTrue(storedOfflineMode());
+        verify(mockApiClient, never()).setOfflineProcessingEnabled(anyBoolean());
+    }
+
+    @Test
+    public void testRemoteConfigurationWithMissingOrNullAutoRetryDisablesAutoRetry() throws Exception {
+        String offlineModeFalse = "\"" + IterableConstants.KEY_OFFLINE_MODE + "\": false";
+        for (String body : new String[]{
+                "{" + offlineModeFalse + "}",
+                "{" + offlineModeFalse + ", \"" + IterableConstants.KEY_AUTO_RETRY + "\": null}"}) {
+            reInitIterableApi();
+            initWithStoredRemoteConfig(true, true);
+            assertTrue(body, IterableApi.getInstance().remoteRetryConfig.isAutoRetryEnabled());
+
+            fetchRemoteConfiguration(new MockResponse().setResponseCode(200).setBody(body));
+
+            assertFalse(body, IterableApi.getInstance().remoteRetryConfig.isAutoRetryEnabled());
+            assertFalse(body, storedAutoRetry());
+            assertFalse(body, storedOfflineMode());
+            verify(mockApiClient).setOfflineProcessingEnabled(false);
+        }
+    }
+
+    // Intended difference from iOS, which ignores the whole response when a field has the wrong type.
+    @Test
+    public void testRemoteConfigurationWithWrongTypeAutoRetryKeepsTheStoredValue() throws Exception {
+        assertWrongTypeAutoRetryKeepsStored(true, "\"false\"");
+        assertWrongTypeAutoRetryKeepsStored(true, "0");
+        assertWrongTypeAutoRetryKeepsStored(false, "\"true\"");
+        assertWrongTypeAutoRetryKeepsStored(false, "1");
+    }
+
+    private void assertWrongTypeAutoRetryKeepsStored(boolean stored, String autoRetry) throws InterruptedException {
+        reInitIterableApi();
+        initWithStoredRemoteConfig(false, stored);
+
+        fetchRemoteConfiguration(new MockResponse().setResponseCode(200)
+                .setBody("{\"" + IterableConstants.KEY_OFFLINE_MODE + "\": false, \""
+                        + IterableConstants.KEY_AUTO_RETRY + "\": " + autoRetry + "}"));
+
+        assertEquals(autoRetry, stored, IterableApi.getInstance().remoteRetryConfig.isAutoRetryEnabled());
+        assertEquals(autoRetry, stored, storedAutoRetry());
+        verify(mockApiClient).setOfflineProcessingEnabled(false);
+    }
+
+    @Test
+    public void testFailedRemoteConfigurationFetchKeepsStoredAutoRetry() throws Exception {
+        initWithStoredRemoteConfig(true, true);
+
+        fetchRemoteConfiguration(new MockResponse().setResponseCode(401)
+                .setBody("{\"code\": \"BadApiKey\", \"msg\": \"Invalid API key\", \""
+                        + IterableConstants.KEY_OFFLINE_MODE + "\": false, \""
+                        + IterableConstants.KEY_AUTO_RETRY + "\": false}"));
+
+        assertTrue(IterableApi.getInstance().remoteRetryConfig.isAutoRetryEnabled());
+        assertTrue(storedAutoRetry());
+        assertTrue(storedOfflineMode());
+        verify(mockApiClient, never()).setOfflineProcessingEnabled(anyBoolean());
+    }
+
+    @Test
+    public void testRemoteConfigurationAppliedAfterJwtRefreshRetry() throws Exception {
+        initWithStoredRemoteConfig(false, false);
+        ReflectionHelpers.setField(IterableApi.getInstance(), "authManager",
+                new ImmediateRefreshAuthManager(IterableApi.getInstance()));
+        server.enqueue(jwtErrorResponse());
+        server.enqueue(new MockResponse().setResponseCode(200)
+                .setBody("{\"" + IterableConstants.KEY_AUTO_RETRY + "\": true}"));
+
+        IterableApi.getInstance().fetchRemoteConfiguration();
+        assertNotNull(server.takeRequest(1, TimeUnit.SECONDS));
+        RecordedRequest retried = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(retried);
+        assertTrue(retried.getRequestUrl().toString().contains("/getRemoteConfiguration"));
+        assertEquals(IterableConstants.HEADER_SDK_AUTH_FORMAT + ImmediateRefreshAuthManager.FRESH_TOKEN,
+                retried.getHeader(IterableConstants.HEADER_SDK_AUTHORIZATION));
+        shadowOf(getMainLooper()).idle();
+
+        assertTrue(IterableApi.getInstance().remoteRetryConfig.isAutoRetryEnabled());
+        assertTrue(storedAutoRetry());
+    }
+
+    @Test
+    public void testUpdateEmailHandlersIgnoreJwtRefreshRetryResult() throws Exception {
+        initWithEmailAndImmediateRefresh();
+        server.enqueue(jwtErrorResponse());
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
+        IterableHelper.SuccessHandler success = mock(IterableHelper.SuccessHandler.class);
+        IterableHelper.FailureHandler failure = mock(IterableHelper.FailureHandler.class);
+
+        IterableApi.getInstance().updateEmail("new@email.com", success, failure);
+        assertNotNull(server.takeRequest(1, TimeUnit.SECONDS));
+        RecordedRequest retried = server.takeRequest(1, TimeUnit.SECONDS);
+        assertNotNull(retried);
+        assertTrue(retried.getRequestUrl().toString().contains("/" + IterableConstants.ENDPOINT_UPDATE_EMAIL));
+        shadowOf(getMainLooper()).idle();
+
+        verify(failure, times(1)).onFailure(any(), any());
+        verify(success, never()).onSuccess(any());
+    }
+
+    private void initWithEmailAndImmediateRefresh() throws InterruptedException {
+        IterableApi.initialize(getContext(), "apiKey", new IterableConfig.Builder().setAutoPushRegistration(false).build());
+        IterableApi.getInstance().setEmail("test@email.com");
+        shadowOf(getMainLooper()).idle();
+        while (server.takeRequest(100, TimeUnit.MILLISECONDS) != null) { }
+        ReflectionHelpers.setField(IterableApi.getInstance(), "authManager",
+                new ImmediateRefreshAuthManager(IterableApi.getInstance()));
+    }
+
+    private static MockResponse jwtErrorResponse() {
+        return new MockResponse().setResponseCode(401)
+                .setBody("{\"code\": \"" + IterableRequestTask.ERROR_CODE_INVALID_JWT_PAYLOAD
+                        + "\", \"msg\": \"JWT token is expired\"}");
+    }
+
+    private static class ImmediateRefreshAuthManager extends IterableAuthManager {
+        static final String FRESH_TOKEN = "fresh-token";
+
+        ImmediateRefreshAuthManager(IterableApi api) {
+            super(api, null, new RetryPolicy(1, 0, RetryPolicy.Type.LINEAR), 60_000);
+        }
+
+        @Override
+        synchronized void scheduleAuthTokenRefresh(
+                long timeDuration,
+                IterableAuthRefreshReason reason,
+                IterableHelper.SuccessHandler successCallback
+        ) {
+            try {
+                successCallback.onSuccess(new JSONObject().put("newAuthToken", FRESH_TOKEN));
+            } catch (JSONException e) {
+                throw new AssertionError(e);
+            }
+        }
+    }
+
+    // Request tests replace the client via setRequestDispatcher, so this checks the constructor's wiring too.
+    @Test
+    public void testApiClientSharesRemoteRetryConfigWithApi() {
+        IterableApi api = new IterableApi();
+        assertSame(api.remoteRetryConfig, api.apiClient.getRemoteRetryConfig());
+
+        api.setRequestDispatcher(mock(IterableRequestDispatcher.class));
+        assertSame(api.remoteRetryConfig, api.apiClient.getRemoteRetryConfig());
     }
 
     //region Consent Logging Tests - Direct Unit Tests

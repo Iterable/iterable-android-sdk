@@ -40,11 +40,12 @@ public class IterableApi {
     private IterableNotificationData _notificationData;
     private String _deviceId;
     private boolean _firstForegroundHandled;
-    private boolean _autoRetryOnJwtFailure;
     private IterableHelper.SuccessHandler _setUserSuccessCallbackHandler;
     private IterableHelper.FailureHandler _setUserFailureCallbackHandler;
 
-    IterableApiClient apiClient = new IterableApiClient(new IterableApiAuthProvider());
+    final IterableRemoteRetryConfig remoteRetryConfig = new IterableRemoteRetryConfig();
+    IterableApiClient apiClient = new IterableApiClient(new IterableApiAuthProvider(),
+            IterableRequestDispatchers.sdk(), remoteRetryConfig);
     final ApiEndpointClassification apiEndpointClassification = new ApiEndpointClassification();
     private static final UnknownUserMerge unknownUserMerge = new UnknownUserMerge();
     private @Nullable UnknownUserManager unknownUserManager;
@@ -91,34 +92,33 @@ public class IterableApi {
     }
 
     void fetchRemoteConfiguration() {
-        apiClient.getRemoteConfiguration(new IterableHelper.IterableActionHandler() {
-            @Override
-            public void execute(@Nullable String data) {
-                if (data == null) {
-                    IterableLogger.e(TAG, "Remote configuration returned null");
-                    return;
-                }
-                try {
-                    JSONObject jsonData = new JSONObject(data);
-                    boolean offlineConfiguration = jsonData.getBoolean(IterableConstants.KEY_OFFLINE_MODE);
-                    sharedInstance.apiClient.setOfflineProcessingEnabled(offlineConfiguration);
-                    SharedPreferences sharedPref = sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_SAVED_CONFIGURATION, Context.MODE_PRIVATE);
-                    SharedPreferences.Editor editor = sharedPref.edit();
-                    editor.putBoolean(IterableConstants.SHARED_PREFS_OFFLINE_MODE_KEY, offlineConfiguration);
+        apiClient.getRemoteConfiguration(this::applyRemoteConfiguration, (reason, data) ->
+                IterableLogger.e(TAG, "Could not get remote configuration, keeping the saved values: " + reason));
+    }
 
-                    // Parse autoRetry flag from remote config.
-                    if (jsonData.has(IterableConstants.KEY_AUTO_RETRY)) {
-                        boolean autoRetryRemote = jsonData.getBoolean(IterableConstants.KEY_AUTO_RETRY);
-                        editor.putBoolean(IterableConstants.SHARED_PREFS_AUTO_RETRY_KEY, autoRetryRemote);
-                        _autoRetryOnJwtFailure = autoRetryRemote;
-                    }
+    private void applyRemoteConfiguration(@NonNull JSONObject jsonData) {
+        SharedPreferences sharedPref = sharedInstance.getMainActivityContext().getSharedPreferences(IterableConstants.SHARED_PREFS_SAVED_CONFIGURATION, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
 
-                    editor.apply();
-                } catch (JSONException e) {
-                    IterableLogger.e(TAG, "Failed to read remote configuration");
-                }
-            }
-        });
+        try {
+            boolean offlineConfiguration = jsonData.getBoolean(IterableConstants.KEY_OFFLINE_MODE);
+            sharedInstance.apiClient.setOfflineProcessingEnabled(offlineConfiguration);
+            editor.putBoolean(IterableConstants.SHARED_PREFS_OFFLINE_MODE_KEY, offlineConfiguration);
+        } catch (JSONException e) {
+            IterableLogger.e(TAG, "Remote configuration has no valid offlineMode, keeping the saved value");
+        }
+
+        // Like iOS, a missing or null autoRetry means disabled and a non-boolean one keeps the saved value.
+        // Unlike iOS, which ignores the whole response if `offlineMode` is missing or either field has the wrong type, each field applies on its own.
+        Object autoRetryRemote = jsonData.isNull(IterableConstants.KEY_AUTO_RETRY) ? Boolean.FALSE : jsonData.opt(IterableConstants.KEY_AUTO_RETRY);
+        if (autoRetryRemote instanceof Boolean) {
+            editor.putBoolean(IterableConstants.SHARED_PREFS_AUTO_RETRY_KEY, (Boolean) autoRetryRemote);
+            remoteRetryConfig.setAutoRetryEnabled((Boolean) autoRetryRemote);
+        } else {
+            IterableLogger.e(TAG, "Remote configuration has no valid autoRetry, keeping the saved value");
+        }
+
+        editor.apply();
     }
 
     public String getEmail() {
@@ -204,14 +204,14 @@ public class IterableApi {
         boolean offlineMode = sharedPref.getBoolean(IterableConstants.SHARED_PREFS_OFFLINE_MODE_KEY, false);
         sharedInstance.apiClient.setOfflineProcessingEnabled(offlineMode);
 
-        sharedInstance._autoRetryOnJwtFailure = sharedPref.getBoolean(IterableConstants.SHARED_PREFS_AUTO_RETRY_KEY, false);
+        sharedInstance.remoteRetryConfig.setAutoRetryEnabled(sharedPref.getBoolean(IterableConstants.SHARED_PREFS_AUTO_RETRY_KEY, false));
     }
 
     /**
      * Returns whether auto-retry on JWT failure is enabled, as determined by remote configuration.
      */
     boolean isAutoRetryOnJwtFailure() {
-        return _autoRetryOnJwtFailure;
+        return remoteRetryConfig.isAutoRetryEnabled();
     }
 
     /**
@@ -980,10 +980,6 @@ public class IterableApi {
         this();
         this.inAppManager = inAppManager;
     }
-    IterableApi(IterableApiClient apiClient, IterableInAppManager inAppManager) {
-        this(inAppManager);
-        this.apiClient = apiClient;
-    }
     IterableApi(IterableInAppManager inAppManager, IterableEmbeddedManager embeddedManager,
                 IterablePushRegistration pushRegistration) {
         config = new IterableConfig.Builder().build();
@@ -993,7 +989,8 @@ public class IterableApi {
     }
     void setRequestDispatcher(IterableRequestDispatcher requestDispatcher) {
         apiClient = new IterableApiClient(new IterableApiAuthProvider(),
-                IterableRequestDispatchers.same(Objects.requireNonNull(requestDispatcher)));
+                IterableRequestDispatchers.same(Objects.requireNonNull(requestDispatcher)),
+                remoteRetryConfig);
     }
 //endregion
 

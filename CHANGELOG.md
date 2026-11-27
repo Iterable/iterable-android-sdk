@@ -7,6 +7,12 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - Added `IterableNetworkRetryPolicy`, `IterableConfig.Builder.setNetworkRetryPolicy()` and `IterableConfig.getNetworkRetryPolicy()` to configure and read retries for API requests that fail with a server error (5xx), a connection error or a timeout. The policy only takes effect once enabled; when it is not enabled (the default), the SDK's existing request retry behaviour is unchanged. Once enabled, the defaults are 5 attempts, a fixed 2 second interval and a 60 second total deadline. The policy is not applied to requests yet.
 
+### Changed
+- A remote configuration response without `autoRetry` now turns JWT auto retry off, like iOS. Previously Android kept the last saved value. With `autoRetry` off, a queued request that gets a JWT 401 is removed from the queue, as it was before auto retry was enabled. The SDK tries to re-send it after it gets a new token, but that re-send isn't guaranteed. An `autoRetry` that is not a boolean, such as a string or a number, keeps the saved value, also like iOS, and the strings `"true"` and `"false"` are no longer read as booleans. Unlike iOS, which ignores the whole response if `offlineMode` is missing or either field has the wrong type, Android applies each field on its own.
+
+### Fixed
+- A remote configuration response without `offlineMode` no longer stops the SDK from reading `autoRetry`. Each field is now applied on its own, and a missing `offlineMode` keeps the saved value. If the remote configuration request fails, the saved values are kept, and an error response body is no longer read as a configuration.
+
 ## [3.11.2]
 
 ### Fixed

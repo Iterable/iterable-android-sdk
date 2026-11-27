@@ -94,6 +94,10 @@ class IterableRequestTask implements Runnable {
                 newAuthToken,
                 iterableApiRequest.legacyCallback
         );
+        if (iterableApiRequest.keepsHandlersOnAuthRetry()) {
+            request.successCallback = iterableApiRequest.successCallback;
+            request.failureCallback = iterableApiRequest.failureCallback;
+        }
         request.copyRetryStateFrom(iterableApiRequest);
         requestDispatcher.executeRetry(request, 0);
     }
@@ -527,6 +531,13 @@ class IterableApiRequest {
 
     boolean canRetry() {
         return retryState == null || retryState.canRetry();
+    }
+
+    // Public calls already got onFailure from the first attempt, so only opted-in internal handlers see the retry.
+    interface AuthRetrySuccessHandler extends IterableHelper.SuccessHandler { }
+
+    boolean keepsHandlersOnAuthRetry() {
+        return processorType != ProcessorType.OFFLINE && successCallback instanceof AuthRetrySuccessHandler;
     }
 
     IterableApiRequest(String apiKey, String baseUrl, String resourcePath, JSONObject json, String requestType, String authToken, IterableHelper.SuccessHandler onSuccess, IterableHelper.FailureHandler onFailure) {
