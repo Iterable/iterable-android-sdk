@@ -47,11 +47,19 @@ public final class IterableNetworkRetryPolicy {
     }
 
     /**
-     * Maximum time from the start of the first attempt to the start of the last retry.
+     * Maximum time in seconds from the start of the first attempt to the start of the last retry.
      * 0 means no deadline.
      */
-    public long getTotalDeadlineMillis() {
+    public double getTotalDeadline() {
+        return totalDeadlineMillis / 1000d;
+    }
+
+    long getTotalDeadlineMillis() {
         return totalDeadlineMillis;
+    }
+
+    private static long secondsToMillis(double seconds) {
+        return Math.round(seconds * 1000d);
     }
 
     /**
@@ -67,17 +75,24 @@ public final class IterableNetworkRetryPolicy {
 
         /**
          * Waits the same interval before every retry.
-         * @param intervalMillis delay in milliseconds, must be 0 or more
+         * @param intervalSeconds delay in seconds, must be 0 or more
          */
         @NonNull
-        public static BackoffPolicy fixed(long intervalMillis) {
-            if (intervalMillis < 0) {
-                throw new IllegalArgumentException("intervalMillis must be >= 0");
+        public static BackoffPolicy fixed(double intervalSeconds) {
+            if (intervalSeconds < 0) {
+                throw new IllegalArgumentException("intervalSeconds must be >= 0");
             }
-            return new BackoffPolicy(intervalMillis);
+            return new BackoffPolicy(secondsToMillis(intervalSeconds));
         }
 
-        public long getIntervalMillis() {
+        /**
+         * Delay between retries, in seconds.
+         */
+        public double getInterval() {
+            return intervalMillis / 1000d;
+        }
+
+        long getIntervalMillis() {
             return intervalMillis;
         }
 
@@ -87,7 +102,7 @@ public final class IterableNetworkRetryPolicy {
     }
 
     public static final class Builder {
-        private static final BackoffPolicy DEFAULT_BACKOFF_POLICY = BackoffPolicy.fixed(2000L);
+        private static final BackoffPolicy DEFAULT_BACKOFF_POLICY = new BackoffPolicy(2_000L);
 
         private boolean retryEnabled = false;
         private int maxAttempts = 5;
@@ -128,14 +143,14 @@ public final class IterableNetworkRetryPolicy {
         }
 
         /**
-         * @param totalDeadlineMillis deadline in milliseconds, 0 for none
+         * @param seconds deadline in seconds, 0 for none
          */
         @NonNull
-        public Builder setTotalDeadlineMillis(long totalDeadlineMillis) {
-            if (totalDeadlineMillis < 0) {
-                throw new IllegalArgumentException("totalDeadlineMillis must be >= 0");
+        public Builder setTotalDeadline(double seconds) {
+            if (seconds < 0) {
+                throw new IllegalArgumentException("totalDeadline must be >= 0");
             }
-            this.totalDeadlineMillis = totalDeadlineMillis;
+            this.totalDeadlineMillis = secondsToMillis(seconds);
             return this;
         }
 

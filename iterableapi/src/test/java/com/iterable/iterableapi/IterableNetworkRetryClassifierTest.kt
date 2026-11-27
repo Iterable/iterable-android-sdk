@@ -14,9 +14,9 @@ class IterableNetworkRetryClassifierTest {
 
     private val start = 1_000_000L
 
-    private fun enabledPolicy(deadlineMillis: Long = 60_000L) = IterableNetworkRetryPolicy.Builder()
+    private fun enabledPolicy(deadlineSeconds: Double = 60.0) = IterableNetworkRetryPolicy.Builder()
         .setRetryEnabled(true)
-        .setTotalDeadlineMillis(deadlineMillis)
+        .setTotalDeadline(deadlineSeconds)
         .build()
 
     private fun jwtError(code: String) = JSONObject().put("code", code)
@@ -116,7 +116,7 @@ class IterableNetworkRetryClassifierTest {
 
     @Test
     fun retriesStopWhenTheNextDelayWouldPassTheDeadline() {
-        val classifier = IterableNetworkRetryClassifier(enabledPolicy(deadlineMillis = 10_000L))
+        val classifier = IterableNetworkRetryClassifier(enabledPolicy(deadlineSeconds = 10.0))
         assertTrue(classifier.shouldRetry(Outcome.RETRIABLE, 1, start, start + 8_000L))
         assertFalse(classifier.shouldRetry(Outcome.RETRIABLE, 1, start, start + 8_001L))
     }
@@ -126,7 +126,7 @@ class IterableNetworkRetryClassifierTest {
         val classifier = IterableNetworkRetryClassifier(
             IterableNetworkRetryPolicy.Builder()
                 .setRetryEnabled(true)
-                .setBackoffPolicy(IterableNetworkRetryPolicy.BackoffPolicy.fixed(Long.MAX_VALUE))
+                .setBackoffPolicy(IterableNetworkRetryPolicy.BackoffPolicy.fixed(Double.MAX_VALUE))
                 .build()
         )
         assertFalse(classifier.shouldRetry(Outcome.RETRIABLE, 1, start, start))
@@ -174,8 +174,8 @@ class IterableNetworkRetryClassifierTest {
         val classifier = IterableNetworkRetryClassifier(
             IterableNetworkRetryPolicy.Builder()
                 .setRetryEnabled(true)
-                .setBackoffPolicy(IterableNetworkRetryPolicy.BackoffPolicy.fixed(500L))
-                .setTotalDeadlineMillis(10_000L)
+                .setBackoffPolicy(IterableNetworkRetryPolicy.BackoffPolicy.fixed(0.5))
+                .setTotalDeadline(10.0)
                 .build()
         )
         assertEquals(500L, classifier.delayMillis())
@@ -185,7 +185,7 @@ class IterableNetworkRetryClassifierTest {
 
     @Test
     fun zeroDeadlineIsUnbounded() {
-        val classifier = IterableNetworkRetryClassifier(enabledPolicy(deadlineMillis = 0L))
+        val classifier = IterableNetworkRetryClassifier(enabledPolicy(deadlineSeconds = 0.0))
         assertTrue(classifier.shouldRetry(Outcome.RETRIABLE, 1, start, start + 3_600_000L))
     }
 
