@@ -61,14 +61,16 @@ class IterableRequestTaskTest {
     fun `server errors follow the legacy retry schedule`() {
         val expectedDelays = longArrayOf(0, 0, 0, 6000, 8000, 10000)
 
-        for (retryCount in expectedDelays.indices) {
-            val failure = mock(IterableHelper.FailureHandler::class.java)
-            val request = request(onFailure = failure)
+        for (code in intArrayOf(500, 503, 599)) {
+            for (retryCount in expectedDelays.indices) {
+                val failure = mock(IterableHelper.FailureHandler::class.java)
+                val request = request(onFailure = failure)
 
-            IterableRequestTask(request, retryCount, requestDispatcher).handleResponse(serverError())
+                IterableRequestTask(request, retryCount, requestDispatcher).handleResponse(serverError(code))
 
-            verify(requestDispatcher).retry(request, retryCount + 1, expectedDelays[retryCount])
-            verifyNoInteractions(failure)
+                verify(requestDispatcher).retry(request, retryCount + 1, expectedDelays[retryCount])
+                verifyNoInteractions(failure)
+            }
         }
     }
 
@@ -115,6 +117,25 @@ class IterableRequestTaskTest {
             500,
             responseData.getInt(IterableConstants.HTTP_STATUS_CODE)
         )
+    }
+
+    @Test
+    fun `server error after six legacy retries calls failure exactly once`() {
+        val failure = mock(IterableHelper.FailureHandler::class.java)
+        val responseData = JSONObject()
+
+        // A literal on purpose, so changing MAX_RETRY_COUNT fails this test.
+        IterableRequestTask(request(onFailure = failure), 6, requestDispatcher).handleResponse(
+            IterableApiResponse.failure(
+                500,
+                """{"msg":"Server unavailable"}""",
+                responseData,
+                "Server unavailable"
+            )
+        )
+
+        verifyNoRetry()
+        verify(failure).onFailure("Server unavailable", responseData)
     }
 
     @Test
@@ -214,9 +235,9 @@ class IterableRequestTaskTest {
         )
     }
 
-    private fun serverError(): IterableApiResponse {
+    private fun serverError(code: Int = 500): IterableApiResponse {
         return IterableApiResponse.failure(
-            500,
+            code,
             """{"msg":"Server unavailable"}""",
             JSONObject(),
             "Server unavailable"
