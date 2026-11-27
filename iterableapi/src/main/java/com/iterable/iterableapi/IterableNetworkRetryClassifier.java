@@ -11,6 +11,8 @@ import java.io.IOException;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
+import java.security.cert.CertPathValidatorException;
+import java.security.cert.CertificateException;
 
 class IterableNetworkRetryClassifier {
     static final String ERROR_CODE_INVALID_JWT_PAYLOAD = "InvalidJwtPayload";
@@ -58,7 +60,12 @@ class IterableNetworkRetryClassifier {
         }
         Throwable cause = e.getCause();
         for (int depth = 0; cause != null && depth < MAX_CAUSE_DEPTH; depth++) {
-            if (cause instanceof EOFException || cause instanceof SocketException) {
+            // A certificate parser can throw EOF on bytes in memory, so a certificate error is never a network failure.
+            if (cause instanceof CertificateException || cause instanceof CertPathValidatorException) {
+                return false;
+            }
+            if (cause instanceof SocketTimeoutException || cause instanceof UnknownHostException
+                    || cause instanceof EOFException || cause instanceof SocketException) {
                 return true;
             }
             cause = cause.getCause();

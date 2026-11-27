@@ -19,7 +19,10 @@ import java.net.ServerSocket
 import java.net.SocketException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
+import java.security.cert.CertPathValidatorException
+import java.security.cert.CertificateException
 import java.util.concurrent.CountDownLatch
+import javax.net.ssl.SSLException
 import javax.net.ssl.SSLHandshakeException
 import kotlin.concurrent.thread
 import org.junit.Before
@@ -189,7 +192,10 @@ class IterableRequestTaskTest {
             EOFException(),
             IOException("unexpected end of stream on http://api.iterable.com/...", EOFException("\\n not found")),
             IOException("unexpected end of stream", SocketException("Connection reset")),
-            IOException("outer", IOException("inner", EOFException()))
+            IOException("outer", IOException("inner", EOFException())),
+            IOException("wrapped", SocketTimeoutException("Read timed out")),
+            IOException("wrapped", UnknownHostException("api.iterable.com")),
+            SSLException("Read error", SocketException("Connection reset"))
         )
         for (e in networkFailures) {
             assertTrue(e.toString(), IterableNetworkRetryClassifier.isNetworkFailure(e))
@@ -202,7 +208,13 @@ class IterableRequestTaskTest {
             IOException("stream closed"),
             IOException("wrapped", IllegalStateException("not network")),
             SSLHandshakeException("handshake failed"),
-            MalformedURLException("no protocol")
+            MalformedURLException("no protocol"),
+            SSLHandshakeException("handshake failed").apply {
+                initCause(CertificateException("Could not parse certificate", EOFException()))
+            },
+            SSLHandshakeException("handshake failed").apply {
+                initCause(CertPathValidatorException("path validation failed", EOFException()))
+            }
         )
         for (e in otherFailures) {
             assertFalse(e.toString(), IterableNetworkRetryClassifier.isNetworkFailure(e))
