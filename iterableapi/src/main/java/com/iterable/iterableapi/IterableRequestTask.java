@@ -272,7 +272,9 @@ class IterableRequestTask implements Runnable {
                 apiResponse = IterableApiResponse.failure(0, requestResult, null, e.getMessage());
             } catch (IOException e) {
                 logError(iterableApiRequest, baseUrl, e);
-                apiResponse = IterableApiResponse.failure(0, requestResult, null, e.getMessage());
+                apiResponse = IterableNetworkRetryClassifier.isNetworkFailure(e)
+                        ? IterableApiResponse.networkFailure(requestResult, e.getMessage())
+                        : IterableApiResponse.failure(0, requestResult, null, e.getMessage());
             } catch (ArrayIndexOutOfBoundsException e) {
                 // This exception is sometimes thrown from the inside of HttpUrlConnection/OkHttp
                 logError(iterableApiRequest, baseUrl, e);
@@ -618,13 +620,20 @@ class IterableApiResponse {
     final String responseBody;
     final JSONObject responseJson;
     final String errorMessage;
+    // Only read by the network retry policy; the legacy retry loop ignores it.
+    final boolean networkFailure;
 
     IterableApiResponse(boolean success, int responseCode, String responseBody, JSONObject responseJson, String errorMessage) {
+        this(success, responseCode, responseBody, responseJson, errorMessage, false);
+    }
+
+    private IterableApiResponse(boolean success, int responseCode, String responseBody, JSONObject responseJson, String errorMessage, boolean networkFailure) {
         this.success = success;
         this.responseCode = responseCode;
         this.responseBody = responseBody;
         this.responseJson = responseJson;
         this.errorMessage = errorMessage;
+        this.networkFailure = networkFailure;
     }
 
     static IterableApiResponse success(int responseCode, String body, @NonNull JSONObject json) {
@@ -633,5 +642,9 @@ class IterableApiResponse {
 
     static IterableApiResponse failure(int responseCode, String body, @Nullable JSONObject json, String errorMessage) {
         return new IterableApiResponse(false, responseCode, body, json, errorMessage);
+    }
+
+    static IterableApiResponse networkFailure(String body, String errorMessage) {
+        return new IterableApiResponse(false, 0, body, null, errorMessage, true);
     }
 }

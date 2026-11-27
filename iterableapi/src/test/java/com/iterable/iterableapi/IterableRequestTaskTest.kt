@@ -1,11 +1,16 @@
 package com.iterable.iterableapi
 
 import com.iterable.iterableapi.unit.TestRunner
+import java.net.MalformedURLException
+import java.net.URL
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
+import org.junit.Assert.assertThrows
+import okhttp3.mockwebserver.MockWebServer
+import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -58,6 +63,55 @@ class IterableRequestTaskTest {
             verify(failure).onFailure("error $code", null)
         }
         verifyNoRetry()
+    }
+
+    @After
+    fun tearDown() {
+        IterableRequestTask.overrideUrl = null
+    }
+
+    @Test
+    fun `legacy loop ignores the network failure marker`() {
+        val failure = mock(IterableHelper.FailureHandler::class.java)
+
+        IterableRequestTask(request(onFailure = failure), 0, requestDispatcher).handleResponse(
+            IterableApiResponse.networkFailure(null, "timeout")
+        )
+
+        verify(failure).onFailure("timeout", null)
+        verifyNoRetry()
+    }
+
+    @Test
+    fun `connection IO failures are marked only when they are network failures`() {
+        val server = MockWebServer().apply { start() }
+        val refused = server.url("/").toString()
+        server.shutdown()
+        val rows = listOf(
+            refused to true,
+            // The test protocol throws what OkHttp throws on devices for a dropped connection.
+            "dropped://api.iterable.com/" to true,
+            "notaprotocol://api.iterable.com/" to false
+        )
+        val previous = System.getProperty("java.protocol.handler.pkgs")
+        System.setProperty("java.protocol.handler.pkgs", com.iterable.iterableapi.testprotocol.dropped.Handler.PACKAGES)
+        try {
+            for ((url, networkFailure) in rows) {
+                val response = execute(url)
+                assertEquals(url, 0, response.responseCode)
+                assertEquals(url, networkFailure, response.networkFailure)
+                if (!networkFailure) {
+                    val thrown = assertThrows(MalformedURLException::class.java) { URL(url) }
+                    assertEquals(url, thrown.message, response.errorMessage)
+                }
+            }
+        } finally {
+            if (previous == null) {
+                System.clearProperty("java.protocol.handler.pkgs")
+            } else {
+                System.setProperty("java.protocol.handler.pkgs", previous)
+            }
+        }
     }
 
     @Test
@@ -154,6 +208,11 @@ class IterableRequestTaskTest {
         )
 
         assertFalse(captureDispatchedRequest().canRetry())
+    }
+
+    private fun execute(baseUrl: String): IterableApiResponse {
+        IterableRequestTask.overrideUrl = baseUrl
+        return IterableRequestTask.executeApiRequest(request(), requestDispatcher)
     }
 
     private fun verifyNoRetry() {
