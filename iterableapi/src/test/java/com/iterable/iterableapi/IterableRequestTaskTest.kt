@@ -169,11 +169,12 @@ class IterableRequestTaskTest {
     @Test
     fun `auth retry keeps the policy, the attempt count and the deadline start`() {
         val request = policyRequest().apply { networkRetryAttempts = 3 }
+        `when`(requestDispatcher.elapsedRealtimeMillis()).thenReturn(31_000L)
 
         IterableRequestTask.retryRequestWithNewAuthToken("fresh-token", request, requestDispatcher)
 
         val captor = ArgumentCaptor.forClass(IterableApiRequest::class.java)
-        verify(requestDispatcher).executeRetry(captor.capture(), eq(3))
+        verify(requestDispatcher).executeRetry(captor.capture(), eq(2))
         assertSame(enabledPolicy, captor.value.networkRetryPolicy)
         assertEquals(1_000L, captor.value.networkRetryStartMillis)
     }
@@ -276,35 +277,59 @@ class IterableRequestTaskTest {
     }
 
     @Test
-    fun `JWT re-send continues the attempt count of the same call`() {
+    fun `JWT re-send is not counted and keeps the deadline of the same call`() {
         val previousApi = IterableApi.sharedInstance
         IterableApi.sharedInstance = IterableTestUtils.newApiWithInlineRequests()
         ReflectionHelpers.setField(IterableApi.sharedInstance, "authManager",
             ImmediateRefreshAuthManager(IterableApi.sharedInstance))
-        val retries = PendingRetries()
-        val server = MockWebServer().apply {
-            enqueue(MockResponse().setResponseCode(500).setBody("{}"))
-            enqueue(MockResponse().setResponseCode(500).setBody("{}"))
-            enqueue(MockResponse().setResponseCode(401).setBody(jwtError().toString()))
-            repeat(5) { enqueue(MockResponse().setResponseCode(500).setBody("{}")) }
-            start()
-        }
-        IterableRequestTask.overrideUrl = server.url("/").toString()
-        val threeAttempts = IterableNetworkRetryPolicy.Builder().setRetryEnabled(true).setMaxAttempts(3).build()
+        val rows = listOf(
+            JwtResendRow(maxAttempts = 3, jwtOnAttempt = 1, refreshMillis = 0L, requests = 4),
+            JwtResendRow(maxAttempts = 2, jwtOnAttempt = 1, refreshMillis = 0L, requests = 3),
+            JwtResendRow(maxAttempts = 3, jwtOnAttempt = 3, refreshMillis = 0L, requests = 4),
+            // The refresh ends past the last approval (57_500) of the first attempt's deadline.
+            JwtResendRow(maxAttempts = 3, jwtOnAttempt = 1, refreshMillis = 58_000L, requests = 2),
+            // The refresh ends past the deadline (60_000), and the re-send is still sent.
+            JwtResendRow(maxAttempts = 3, jwtOnAttempt = 1, refreshMillis = 61_000L, requests = 2)
+        )
 
         try {
-            dispatcher(ManualClock(), retries).execute(request().apply { networkRetryPolicy = threeAttempts })
-            var guard = 0
-            while (retries.tasks.isNotEmpty() && guard++ < 10) {
-                retries.runNext()
-            }
+            for (row in rows) {
+                val clock = ManualClock().apply { now = 100_000L }
+                val retries = PendingRetries()
+                val server = MockWebServer().apply {
+                    dispatcher = object : Dispatcher() {
+                        override fun dispatch(request: RecordedRequest): MockResponse {
+                            if (requestCount == row.jwtOnAttempt) {
+                                clock.now += row.refreshMillis
+                                return MockResponse().setResponseCode(401).setBody(jwtError().toString())
+                            }
+                            return MockResponse().setResponseCode(500).setBody("{}")
+                        }
+                    }
+                    start()
+                }
+                IterableRequestTask.overrideUrl = server.url("/").toString()
+                val policy = IterableNetworkRetryPolicy.Builder().setRetryEnabled(true)
+                    .setMaxAttempts(row.maxAttempts).build()
 
-            assertEquals("3 attempts plus the JWT re-send, which isn't counted", 4, server.requestCount)
+                try {
+                    dispatcher(clock, retries).execute(request().apply { networkRetryPolicy = policy })
+                    var guard = 0
+                    while (retries.tasks.isNotEmpty() && guard++ < 10) {
+                        retries.runNext()
+                    }
+
+                    assertEquals("requests sent for $row", row.requests, server.requestCount)
+                } finally {
+                    server.shutdown()
+                }
+            }
         } finally {
-            server.shutdown()
             IterableApi.sharedInstance = previousApi
         }
     }
+
+    private data class JwtResendRow(val maxAttempts: Int, val jwtOnAttempt: Int, val refreshMillis: Long, val requests: Int)
 
     @Test
     fun `a 200 whose body breaks mid-read keeps its code and is not retried`() {

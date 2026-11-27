@@ -84,7 +84,7 @@ class IterableRequestTask implements Runnable {
     // The retry was approved before its delay and executor wait, so the deadline is checked again here.
     private boolean startNetworkRetryAttempt() {
         long now = requestDispatcher.elapsedRealtimeMillis();
-        if (retryCount == 0) {
+        if (iterableApiRequest.getNetworkRetryAttempts() == 0) {
             iterableApiRequest.setNetworkRetryStartMillis(now);
         } else {
             IterableApiResponse retriedFailure = iterableApiRequest.takeNetworkRetriedFailure();
@@ -120,7 +120,8 @@ class IterableRequestTask implements Runnable {
             request.failureCallback = iterableApiRequest.failureCallback;
         }
         request.copyRetryStateFrom(iterableApiRequest);
-        int retryCount = request.getNetworkRetryPolicy() != null ? request.getNetworkRetryAttempts() : 0;
+        // The re-send takes the place of the attempt that got the 401, so it keeps that attempt's number.
+        int retryCount = request.getNetworkRetryPolicy() != null ? Math.max(0, request.getNetworkRetryAttempts() - 1) : 0;
         requestDispatcher.executeRetry(request, retryCount);
     }
 
