@@ -388,27 +388,38 @@ class IterableRequestTaskTest {
         IterableRequestDispatcher(Runnable::run, Runnable::run, Runnable::run, retries, clock)
 
     @Test
-    fun `connection IO failures are marked only when they are network failures`() {
+    fun `IO failures are retried only when they are network failures and a POST was not sent yet`() {
         val server = MockWebServer().apply { start() }
         val refused = server.url("/").toString()
         server.shutdown()
+        val post = IterableApiRequest.POST
+        val get = IterableApiRequest.GET
         val rows = listOf(
-            refused to true,
-            // The test protocol throws what OkHttp throws on devices for a dropped connection.
-            "dropped://api.iterable.com/" to true,
-            "notaprotocol://api.iterable.com/" to false
+            IoFailureRow(post, refused, retried = true),
+            IoFailureRow(get, refused, retried = true),
+            IoFailureRow(post, "failing://connect-timeout/", retried = true),
+            IoFailureRow(post, "failing://read-timeout/", retried = false),
+            IoFailureRow(get, "failing://read-timeout/", retried = true),
+            IoFailureRow(post, "failing://dropped/", retried = false),
+            IoFailureRow(get, "failing://dropped/", retried = true),
+            IoFailureRow(post, "notaprotocol://api.iterable.com/", retried = false)
         )
         val previous = System.getProperty("java.protocol.handler.pkgs")
-        System.setProperty("java.protocol.handler.pkgs", com.iterable.iterableapi.testprotocol.dropped.Handler.PACKAGES)
+        System.setProperty("java.protocol.handler.pkgs", com.iterable.iterableapi.testprotocol.failing.Handler.PACKAGES)
         try {
-            for ((url, networkFailure) in rows) {
-                val response = execute(url)
-                assertEquals(url, 0, response.responseCode)
-                assertEquals(url, networkFailure, response.networkFailure)
-                if (!networkFailure) {
-                    val thrown = assertThrows(MalformedURLException::class.java) { URL(url) }
-                    assertEquals(url, thrown.message, response.errorMessage)
+            for (row in rows) {
+                val response = execute(row.url, row.type)
+                assertEquals("$row code", 0, response.responseCode)
+                assertEquals("$row marked", row.retried, response.networkFailure)
+                if (row.url.startsWith("notaprotocol")) {
+                    val thrown = assertThrows(MalformedURLException::class.java) { URL(row.url) }
+                    assertEquals("$row message", thrown.message, response.errorMessage)
                 }
+
+                val retries = PendingRetries()
+                IterableRequestTask(policyRequest(type = row.type), 0, dispatcher(ManualClock().apply { now = 1_000L }, retries))
+                    .handleResponse(response)
+                assertEquals("$row retried", row.retried, retries.tasks.size == 1)
             }
         } finally {
             if (previous == null) {
@@ -418,6 +429,8 @@ class IterableRequestTaskTest {
             }
         }
     }
+
+    private data class IoFailureRow(val type: String, val url: String, val retried: Boolean)
 
     @Test
     fun `server error after retry limit calls failure exactly once`() {
@@ -517,8 +530,11 @@ class IterableRequestTaskTest {
 
     private val enabledPolicy = IterableNetworkRetryPolicy.Builder().setRetryEnabled(true).build()
 
-    private fun policyRequest(onFailure: IterableHelper.FailureHandler? = null): IterableApiRequest {
-        return request(onFailure = onFailure).apply {
+    private fun policyRequest(
+        onFailure: IterableHelper.FailureHandler? = null,
+        type: String = IterableApiRequest.POST
+    ): IterableApiRequest {
+        return request(onFailure = onFailure, type = type).apply {
             networkRetryPolicy = enabledPolicy
             networkRetryStartMillis = 1_000L
         }

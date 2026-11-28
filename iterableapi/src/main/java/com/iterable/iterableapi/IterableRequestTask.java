@@ -143,6 +143,7 @@ class IterableRequestTask implements Runnable {
 
             IterableLogger.v(TAG, ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
             String baseUrl = getBaseUrl();
+            boolean postConnected = false;
 
             try {
                 if (iterableApiRequest.requestType == IterableApiRequest.GET) {
@@ -193,6 +194,9 @@ class IterableRequestTask implements Runnable {
 
                     IterableLogger.v(TAG, "POST Request \nURI : " + baseUrl + iterableApiRequest.resourcePath + buildHeaderString(urlConnection) + "\n body : \n" + iterableApiRequest.json.toString(2));
 
+                    // Connecting first tells a failure before the send from one after it, since both timeouts share one exception type.
+                    urlConnection.connect();
+                    postConnected = true;
                     OutputStream os = urlConnection.getOutputStream();
                     BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, "UTF-8"));
                     writer.write(iterableApiRequest.json.toString());
@@ -298,7 +302,8 @@ class IterableRequestTask implements Runnable {
                 apiResponse = IterableApiResponse.failure(0, requestResult, null, e.getMessage());
             } catch (IOException e) {
                 logError(iterableApiRequest, baseUrl, e);
-                apiResponse = IterableNetworkRetryClassifier.isNetworkFailure(e)
+                // The server may already have a POST that failed after it was sent, and there's no idempotency key.
+                apiResponse = !postConnected && IterableNetworkRetryClassifier.isNetworkFailure(e)
                         ? IterableApiResponse.networkFailure(requestResult, e.getMessage())
                         : IterableApiResponse.failure(0, requestResult, null, e.getMessage());
             } catch (ArrayIndexOutOfBoundsException e) {

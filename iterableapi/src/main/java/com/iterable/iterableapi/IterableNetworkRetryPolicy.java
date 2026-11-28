@@ -7,6 +7,11 @@ import androidx.annotation.NonNull;
  * The policy applies to online requests once it is enabled and the project's remote {@code autoRetry}
  * setting is on; otherwise (the default) the SDK's existing request retry behaviour is unchanged.
  * Requests stored by offline mode keep their existing retry behaviour.
+ * A POST request, like a tracked event or purchase, is only retried for a connection error or a timeout if it
+ * failed before it was sent, for example on a DNS failure, a refused connection or a connect timeout. A POST
+ * that times out or loses its connection after it was sent isn't retried, since the server may already have it.
+ * A POST that gets a server error (5xx) is still retried.
+ * GET requests are retried for all of these errors.
  * A request re-sent after a JWT authorization failure is handled by the auth retry path, so the re-send is not
  * limited by {@link #getMaxAttempts()} or {@link #getTotalDeadline()}. Network retries after it continue
  * the same attempt count and deadline.
