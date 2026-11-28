@@ -34,14 +34,18 @@ class IterableNetworkRetryClassifierTest {
 
     @Test
     fun statusCodesAreClassified() {
-        val expected = mapOf(
-            Outcome.SUCCESS to listOf(200, 299),
-            Outcome.RETRIABLE to listOf(0, 500, 502, 503, 504, 599),
-            Outcome.TERMINAL to listOf(199, 300, 399, 400, 403, 404, 409, 422, 429, 499, 600, 999)
+        // (codes, outcome for the code, outcome for a failed response with that code)
+        val rows = listOf(
+            Triple(listOf(200, 299), Outcome.SUCCESS, Outcome.TERMINAL),
+            Triple(listOf(0), Outcome.RETRIABLE, Outcome.TERMINAL),
+            Triple(listOf(500, 502, 503, 504, 599), Outcome.RETRIABLE, Outcome.RETRIABLE),
+            Triple(listOf(-1, 199, 300, 399, 400, 403, 404, 409, 422, 429, 499, 600, 999), Outcome.TERMINAL, Outcome.TERMINAL)
         )
-        for ((outcome, codes) in expected) {
+        for ((codes, forCode, forFailedResponse) in rows) {
             for (code in codes) {
-                assertEquals("code $code", outcome, IterableNetworkRetryClassifier.classify(code, null))
+                assertEquals("code $code", forCode, IterableNetworkRetryClassifier.classify(code, null))
+                val response = IterableApiResponse.failure(code, null, null, "error $code")
+                assertEquals("failed response $code", forFailedResponse, IterableNetworkRetryClassifier.classify(response))
             }
         }
     }
@@ -147,10 +151,11 @@ class IterableNetworkRetryClassifierTest {
         val deadline = 10_000L
         for (delay in listOf(2_000L, 500L)) {
             val classifier = classifierWith(delay / 1000.0, deadline / 1000.0)
-            val lastRetry = deadline - delay
+            // The documented 500 ms start margin, a literal so changing RETRY_START_TOLERANCE_MILLIS fails here.
+            val lastRetry = deadline - delay - 500L
             assertEquals(delay, classifier.delayMillis())
-            assertTrue("delay $delay", classifier.shouldRetry(Outcome.RETRIABLE, 1, start, start + lastRetry))
-            assertFalse("delay $delay", classifier.shouldRetry(Outcome.RETRIABLE, 1, start, start + lastRetry + 1))
+            assertTrue("delay $delay, retried at the last approval", classifier.shouldRetry(Outcome.RETRIABLE, 1, start, start + lastRetry))
+            assertFalse("delay $delay, not retried 1 ms after the last approval", classifier.shouldRetry(Outcome.RETRIABLE, 1, start, start + lastRetry + 1))
         }
         val delayLongerThanTheDeadline = classifierWith(Double.MAX_VALUE, 60.0)
         assertFalse("MAX delay at 0 ms", delayLongerThanTheDeadline.shouldRetry(Outcome.RETRIABLE, 1, start, start))
@@ -169,6 +174,14 @@ class IterableNetworkRetryClassifierTest {
     @Test
     fun zeroDeadlineIsUnbounded() {
         val classifier = IterableNetworkRetryClassifier(enabledPolicy(deadlineSeconds = 0.0))
-        assertTrue(classifier.shouldRetry(Outcome.RETRIABLE, 1, start, start + 3_600_000L))
+        assertTrue("approved after an hour", classifier.shouldRetry(Outcome.RETRIABLE, 1, start, start + 3_600_000L))
+        assertFalse("started after an hour", classifier.isPastDeadline(start, start + 3_600_000L))
+    }
+
+    @Test
+    fun retryStartIsPastTheDeadlineOnlyAfterIt() {
+        val classifier = IterableNetworkRetryClassifier(enabledPolicy(deadlineSeconds = 10.0))
+        assertFalse(classifier.isPastDeadline(start, start + 10_000L))
+        assertTrue(classifier.isPastDeadline(start, start + 10_001L))
     }
 }

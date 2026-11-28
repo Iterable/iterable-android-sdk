@@ -378,7 +378,7 @@ public class IterableConfig {
         /**
          * Set the retry policy for failed API requests. Defaults to {@link IterableNetworkRetryPolicy#DEFAULT},
          * which is not enabled, so the SDK's existing request retry behaviour is unchanged. The policy only
-         * takes effect once enabled. Not applied to requests yet.
+         * takes effect once enabled and the project's remote {@code autoRetry} setting is on.
          * @param networkRetryPolicy policy to use; {@code null} is treated as {@link IterableNetworkRetryPolicy#DEFAULT}
          */
         @NonNull

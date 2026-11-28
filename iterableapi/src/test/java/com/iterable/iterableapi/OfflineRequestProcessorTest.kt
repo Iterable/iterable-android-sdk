@@ -11,6 +11,7 @@ import org.junit.Before
 import org.junit.Test
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.isNull
+import org.mockito.Mockito.clearInvocations
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.verifyNoInteractions
@@ -133,6 +134,43 @@ class OfflineRequestProcessorTest : BaseTest() {
         supportedEndpoints.forEach {
             assertEquals(true, requestProcessor.isRequestOfflineCompatible(it))
         }
+    }
+
+    @Test
+    fun `immediate requests get the network retry policy only when remote autoRetry is on`() {
+        val sends = listOf<Pair<String, () -> Unit>>(
+            "GET" to {
+                requestProcessor.processGetRequest("api-key", IterableConstants.ENDPOINT_GET_INAPP_MESSAGES, JSONObject(), null, null, null)
+            },
+            "legacy GET" to {
+                requestProcessor.processGetRequest("api-key", IterableConstants.ENDPOINT_GET_INAPP_MESSAGES, JSONObject(), null,
+                    null as IterableHelper.IterableActionHandler?)
+            },
+            "POST" to {
+                requestProcessor.processPostRequest("api-key", IterableConstants.ENDPOINT_UPDATE_EMAIL, JSONObject(), null, null, null)
+            }
+        )
+        for (autoRetry in listOf(true, false)) {
+            remoteRetryConfig.isAutoRetryEnabled = autoRetry
+            for ((name, send) in sends) {
+                clearInvocations(immediateRequestDispatcher)
+                send()
+                assertSame("$name, autoRetry $autoRetry", if (autoRetry) enabledPolicy else null,
+                    captureDispatchedRequest().networkRetryPolicy)
+            }
+        }
+    }
+
+    @Test
+    fun `stored requests do not get the network retry policy`() {
+        remoteRetryConfig.isAutoRetryEnabled = true
+        `when`(healthMonitor.canSchedule()).thenReturn(true)
+
+        requestProcessor.processPostRequest("api-key", IterableConstants.ENDPOINT_TRACK, JSONObject(), null, null, null)
+
+        val requestCaptor = ArgumentCaptor.forClass(IterableApiRequest::class.java)
+        verify(taskScheduler).scheduleTask(requestCaptor.capture(), isNull(), isNull())
+        assertNull(requestCaptor.value.networkRetryPolicy)
     }
 
     @Test

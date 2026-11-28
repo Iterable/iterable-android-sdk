@@ -51,6 +51,8 @@ class OnlineRequestProcessor implements RequestProcessor {
 
     private void executeRequest(@NonNull IterableApiRequest request, @Nullable IterableRequestRetryState retryState) {
         request.setRetryState(retryState);
+        request.setNetworkRetryPolicy(remoteRetryConfig.activeNetworkRetryPolicy(
+                networkRetryPolicyProvider.getNetworkRetryPolicy()));
         requestDispatcher.execute(request);
     }
 

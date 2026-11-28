@@ -75,6 +75,11 @@ class IterableApiClient {
         return remoteRetryConfig;
     }
 
+    @NonNull
+    IterableNetworkRetryPolicy getNetworkRetryPolicy() {
+        return networkRetryPolicyProvider.getNetworkRetryPolicy();
+    }
+
     private synchronized RequestProcessor getRequestProcessor() {
         if (requestProcessor == null) {
             requestProcessor = newOnlineRequestProcessor(requestDispatchers.online());
